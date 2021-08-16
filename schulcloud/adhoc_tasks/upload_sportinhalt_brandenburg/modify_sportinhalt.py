@@ -103,7 +103,7 @@ def add_attributes_to_nodes(auth_response, node_id_to_response):
                 filename = get_filename(node_id, node_id_to_response)
                 property_value = EduSharing().buildUUID(filename + salt)
 
-                edusharing_set_property(node_id, property_name, property_value)
+                edusharing_set_property(node_id, property_name, property_value, auth_response)
 
             elif k == "cclom:general_keyword":
                 property_name = k
@@ -124,7 +124,7 @@ def add_attributes_to_nodes(auth_response, node_id_to_response):
             else:
                 property_name = k.replace(":", "%3A")
                 property_value = str(v)
-                edusharing_set_property(node_id, property_name, property_value)
+                edusharing_set_property(node_id, property_name, property_value, auth_response)
 
 
 def get_filename(node_id, node_id_to_response):
@@ -145,9 +145,15 @@ def get_filename(node_id, node_id_to_response):
     return property_value
 
 
-def edusharing_set_property(node_id, property_name, property_value):
+def edusharing_set_property(node_id, property_name, property_value, auth_response):
     headers = get_base_headers(auth_response)
-    at_uri = "/edu-sharing/rest/node/v1/nodes/-home-/" + node_id + "/property?property=" + property_name + "&value=" + property_value
+    if type(property_value) == str:
+        at_uri = "/edu-sharing/rest/node/v1/nodes/-home-/" + node_id + "/property?property=" + property_name + "&value=" + property_value
+    elif type(property_value) == list or type(property_value) == set:
+        at_uri = "/edu-sharing/rest/node/v1/nodes/-home-/" + node_id + "/property?property=" + property_name + "&value=" + \
+            '&value='.join(map(lambda x: str(x), property_value))
+    else:
+        at_uri = "/edu-sharing/rest/node/v1/nodes/-home-/" + node_id + "/property?property=" + property_name + "&value=" + str(property_value)
     at_url = parsed_edusharing_url.scheme + "://" + hostname + at_uri
     r = requests.request("POST", at_url, headers=headers, allow_redirects=False)
 
@@ -166,7 +172,7 @@ def edusharing_change_metadata(node_id, key, value, is_array=False):
 
 
 
-def add_permissions_to_nodes(node_id_to_response):
+def add_permissions_to_nodes(node_id_to_response, auth_response):
     """
     Add the right permissions, which should be also reflected to ccm:ph_invited on individual elements.
     """
@@ -190,4 +196,4 @@ if __name__ == '__main__':
 
     add_attributes_to_nodes(auth_response, node_id_to_response)
 
-    add_permissions_to_nodes(node_id_to_response)
+    add_permissions_to_nodes(node_id_to_response, auth_response)
