@@ -4,7 +4,7 @@ html2text
 scrapy-splash
 python-dateutil
 python-dotenv==0.13.0
-Scrapy==1.8.0
+Scrapy==2.6.1
 requests==2.23.0
 vobject==0.9.6.1
 xmltodict
