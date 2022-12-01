@@ -23,7 +23,6 @@ jobs:
         uses: helm/chart-releaser-action@v1.4.1
         with:
             charts_dir: charts
-            config: cr.yaml
             # make it a a universal variable/secret?
             charts_repo_url: https://hpi-schul-cloud.github.io/helm-charts-registry/
         env:
