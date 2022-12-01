@@ -1,0 +1,40 @@
+image:
+  repository: ghcr.io/hpi-schul-cloud/oeh-search-etl
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion.
+  # Tag anpassen
+  tag: "0.0.8"
+
+nameOverride: ""
+fullnameOverride: ""
+
+resources: {}
+  # limits:
+  #   cpu: 1000m
+  #   memory: 1024Mi
+  # requests:
+  #   cpu: 500m
+  #   memory: 512Mi
+
+# envs depend on crawler, only CRAWLER and SCHEDULE are always required
+env:
+- name: CRAWLER
+  value: hello_world
+- name: SCHEDULE
+  value: "*-*-13:30"
+#   - name: EDU_SHARING_BASE_URL
+#     valueFrom:
+#       secretKeyRef:
+#         name: edusharing-secret
+#         key: url
+#   - name: EDU_SHARING_USERNAME
+#     valueFrom:
+#       secretKeyRef:
+#         name: edusharing-secret
+#         key: username
+#   - name: edu-sharing-password
+#     valueFrom:
+#       secretKeyRef:
+#         name: edusharing-secret
+#         key: password
+
