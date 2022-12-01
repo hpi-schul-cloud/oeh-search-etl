@@ -1,0 +1,29 @@
+name: Release Charts
+
+on: push
+    # branches:
+    #   - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      # https://github.com/helm/chart-releaser-action
+      - name: Run chart-releaser
+        # check releaser action version
+        uses: helm/chart-releaser-action@v1.1.0
+        with:
+          # make it a a universal valriable/secret?
+          charts_repo_url: https://github.com/hpi-schul-cloud/helm-charts-registry
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
