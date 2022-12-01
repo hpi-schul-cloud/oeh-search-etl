@@ -22,6 +22,8 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.4.1
         with:
+            # Using config file:  /home/runner/work/oeh-search-etl/oeh-search-etl/cr.yaml
+            # Error: error creating GitHub release edusharing-crawler-0.1.91: POST https://github.com/hpi-schul-cloud/repos/hpi-schul-cloud/oeh-search-etl/releases: 403  []
             charts_dir: charts
             # make it a a universal variable/secret?
             charts_repo_url: https://hpi-schul-cloud.github.io/helm-charts-registry/
