@@ -1,4 +1,4 @@
-name: Release Charts
+name: Release Helm Charts
 
 on: push
     # branches:
@@ -23,7 +23,9 @@ jobs:
         # check releaser action version
         uses: helm/chart-releaser-action@v1.1.0
         with:
-          # make it a a universal valriable/secret?
-          charts_repo_url: https://github.com/hpi-schul-cloud/helm-charts-registry
+            charts_dir: charts
+            config: cr.yaml
+            # make it a a universal variable/secret?
+            charts_repo_url: https://github.com/hpi-schul-cloud/helm-charts-registry
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
