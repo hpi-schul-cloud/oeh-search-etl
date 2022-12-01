@@ -27,4 +27,4 @@ jobs:
             # make it a a universal variable/secret?
             charts_repo_url: https://hpi-schul-cloud.github.io/helm-charts-registry/
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_TOKEN: "${{ secrets.REPO_ACCESS_TOKEN }}"
