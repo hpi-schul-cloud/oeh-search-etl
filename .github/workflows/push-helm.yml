@@ -24,18 +24,20 @@ jobs:
           persist-credentials: true
           ref: main
           path: helm-charts-registry
-      - name: Helm Package
-        run: helm package charts/edusharing-crawler --version "0.1.0+$(git rev-parse --short "$GITHUB_SHA")" -d helm-charts-registry
+      - name: Prepare Helm Chart
+        run:  |
+          helm package charts/edusharing-crawler --version "0.1.0" -d helm-charts-registry
+          tar zxvf edusharing-crawler-0.1.0.tgz 
+          mv edusharing-crawler-0.1.0 charts/edusharing-crawler
 
-      - name: Helm Push
+      - name: Push Helm Chart
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN_INVENTORY }}
         run: |
-          git config --global user.email "yourbot@yourorg.com"
-          git config --global user.name "YourOrg Bot"
-          CHART_PACKAGE_NAME="edusharing-crawler-0.1.0+$(git rev-parse --short "$GITHUB_SHA").tgz"
-          cd helm-charts-registry
-          ls -la
+          git config --global user.email "oeh-search-etl-gha@dbildungscloud.com"
+          git config --global user.name "oeh-search-etl-gha"
+          CHART_PACKAGE_NAME="edusharing-crawler-0.1.0"
+          cd helm-charts-registry/charts
           git add "$CHART_PACKAGE_NAME"
           git commit -m "$CHART_PACKAGE_NAME"
           git push origin main
