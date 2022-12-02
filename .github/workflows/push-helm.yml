@@ -5,7 +5,7 @@ on:
     # - main
 
 jobs:
-  publish:
+  push-helm-chart:
     runs-on: ubuntu-20.04
     steps:
       - name: Chart Checkout
@@ -25,9 +25,9 @@ jobs:
           path: helm-charts-registry
       - name: Prepare Helm Chart
         run:  |
-          helm package charts/edusharing-crawler --version "0.1.0" -d helm-charts-registry
+          helm package charts/edusharing-crawler -d helm-charts-registry
           cd helm-charts-registry
-          tar zxvf edusharing-crawler-0.1.0.tgz
+          tar zxvf edusharing-crawler-*.tgz
           rm -r charts/edusharing-crawler
           mv edusharing-crawler charts/edusharing-crawler
           ls charts
