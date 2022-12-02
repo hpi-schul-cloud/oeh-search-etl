@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
           ref: main
-          path: helm-chart-repository
+          path: helm-charts-repository
       - name: Helm Package
         run: helm package charts/edusharing-crawler --version "0.1.0+$(git rev-parse --short "$GITHUB_SHA")" -d helm-charts-repository
       - name: Helm Push
