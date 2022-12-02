@@ -38,7 +38,7 @@ jobs:
           git config --global user.email "oeh-search-etl-gha@dbildungscloud.com"
           git config --global user.name "oeh-search-etl-gha"
           CHART_PACKAGE_NAME="edusharing-crawler"
-          cd helm-charts-registry/charts
+          cd helm-charts-registry/automation
           git add "$CHART_PACKAGE_NAME"
           git commit -m "$CHART_PACKAGE_NAME"
           git push origin main
