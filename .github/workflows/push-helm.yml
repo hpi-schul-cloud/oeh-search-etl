@@ -24,7 +24,7 @@ jobs:
         run: helm package charts/edusharing-crawler --version "0.1.0+$(git rev-parse --short "$GITHUB_SHA")" -d helm-charts-repository
       - name: Helm Push
         env:
-          GITHUB_TOKEN: ${{ secrets.YOUR_BOT_GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "yourbot@yourorg.com"
           git config --global user.name "YourOrg Bot"
@@ -32,4 +32,4 @@ jobs:
           cd helm-charts-repository
           git add "$CHART_PACKAGE_NAME"
           git commit -m "$CHART_PACKAGE_NAME"
-          git push origin master
+          git push origin main
