@@ -14,22 +14,23 @@ jobs:
       - name: Helm Repository Checkout
         uses: actions/checkout@v2
         with:
-          repository: hpi-schul-cloud/helm-charts-repository
-          token: ${{ secrets.YOUR_BOT_GH_TOKEN }}
+          repository: hpi-schul-cloud/helm-charts-registry
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
           persist-credentials: true
           ref: main
-          path: helm-charts-repository
+          path: helm-charts-registry
       - name: Helm Package
-        run: helm package charts/edusharing-crawler --version "0.1.0+$(git rev-parse --short "$GITHUB_SHA")" -d helm-charts-repository
+        run: helm package charts/edusharing-crawler --version "0.1.0+$(git rev-parse --short "$GITHUB_SHA")" -d helm-charts-registry
+
       - name: Helm Push
         env:
-          GITHUB_TOKEN: ${{ secrets.YOUR_BOT_GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "yourbot@yourorg.com"
           git config --global user.name "YourOrg Bot"
           CHART_PACKAGE_NAME="edusharing-crawler-0.1.0+$(git rev-parse --short "$GITHUB_SHA").tgz"
-          cd helm-charts-repository
+          cd helm-charts-registry
           git status
           ls -la
           git add "$CHART_PACKAGE_NAME"
