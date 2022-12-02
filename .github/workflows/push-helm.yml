@@ -29,7 +29,7 @@ jobs:
           git config --global user.email "yourbot@yourorg.com"
           git config --global user.name "YourOrg Bot"
           CHART_PACKAGE_NAME="edusharing-crawler-0.1.0+$(git rev-parse --short "$GITHUB_SHA").tgz"
-          cd helm-chart-repository
+          cd helm-charts-repository
           git add "$CHART_PACKAGE_NAME"
           git commit -m "$CHART_PACKAGE_NAME"
           git push origin main
