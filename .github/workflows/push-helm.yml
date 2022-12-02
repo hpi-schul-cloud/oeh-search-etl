@@ -29,7 +29,7 @@ jobs:
           cd helm-charts-registry
           if [ -d "automation/edusharing-crawler" ]; then rm -r $automation/edusharing-crawler; fi
           ls *.tgz |xargs -n1 tar -xzf
-          mv edusharing-crawler charts/edusharing-crawler
+          mv edusharing-crawler automation/edusharing-crawler
 
       - name: Push Helm Chart
         env:
