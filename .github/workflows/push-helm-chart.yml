@@ -21,10 +21,10 @@ jobs:
 
       # https://github.com/helm/chart-releaser-action
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.4.0
+        uses: helm/chart-releaser-action@v1.4.4
         with:
             charts_dir: charts
-            config: cr.yaml
+            # config: cr.yaml
             # make it a a universal variable/secret?
             charts_repo_url: https://hpi-schul-cloud.github.io/helm-charts-registry/
         env:
