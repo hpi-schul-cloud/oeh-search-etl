@@ -1,0 +1,35 @@
+name: PushHelm
+on: push
+
+jobs:
+  publish:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Chart Checkout
+        uses: actions/checkout@v2
+      - name: Helm Installation
+        uses: azure/setup-helm@v1.1
+        with:
+          version: v3.7.0
+      - name: Helm Repository Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: hpi-schul-cloud/helm-charts-repository
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          persist-credentials: true
+          ref: main
+          path: helm-chart-repository
+      - name: Helm Package
+        run: helm package edusharing-crawler --version "0.1.0+$(git rev-parse --short "$GITHUB_SHA")" -d helm-charts-repository
+      - name: Helm Push
+        env:
+          GITHUB_TOKEN: ${{ secrets.YOUR_BOT_GH_TOKEN }}
+        run: |
+          git config --global user.email "yourbot@yourorg.com"
+          git config --global user.name "YourOrg Bot"
+          CHART_PACKAGE_NAME="my-chart-0.1.0+$(git rev-parse --short "$GITHUB_SHA").tgz"
+          cd helm-chart-repository
+          git add "$CHART_PACKAGE_NAME"
+          git commit -m "$CHART_PACKAGE_NAME"
+          git push origin main
