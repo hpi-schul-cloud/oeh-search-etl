@@ -28,7 +28,8 @@ jobs:
           helm package charts/edusharing-crawler --version "0.1.0" -d helm-charts-registry
           cd helm-charts-registry
           tar zxvf edusharing-crawler-0.1.0.tgz 
-          mv edusharing-crawler-0.1.0 charts/edusharing-crawler
+          ls -la
+          mv edusharing-crawler charts/edusharing-crawler
 
       - name: Push Helm Chart
         env:
