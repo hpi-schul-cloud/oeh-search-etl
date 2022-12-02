@@ -28,7 +28,7 @@ jobs:
           helm package charts/edusharing-crawler -d helm-charts-registry
           cd helm-charts-registry
           rm -r charts/edusharing-crawler
-          tar zxvf edusharing-crawler-*.tgz
+          ls *.tgz |xargs -n1 tar -xzf
           mv edusharing-crawler charts/edusharing-crawler
           ls charts
 
