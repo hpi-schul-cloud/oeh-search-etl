@@ -29,7 +29,8 @@ jobs:
           cd helm-charts-registry
           tar zxvf edusharing-crawler-0.1.0.tgz 
           ls -la
-          mv edusharing-crawler charts/edusharing-crawler
+          mv edusharing-crawler charts/
+          ls charts
 
       - name: Push Helm Chart
         env:
