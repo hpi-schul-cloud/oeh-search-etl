@@ -29,7 +29,7 @@ jobs:
           cd helm-charts-registry
           tar zxvf edusharing-crawler-0.1.0.tgz
           ls -la
-          ch charts
+          cd charts
           ls -la 
           rm -r edusharing-cralwer
           cd .. 
