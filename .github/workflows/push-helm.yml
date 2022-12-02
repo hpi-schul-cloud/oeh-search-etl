@@ -27,10 +27,9 @@ jobs:
         run:  |
           helm package charts/edusharing-crawler -d helm-charts-registry
           cd helm-charts-registry
-          rm -r charts/edusharing-crawler
+          if [ -d "automation/edusharing-crawler" ]; then rm -r $automation/edusharing-crawler; fi
           ls *.tgz |xargs -n1 tar -xzf
           mv edusharing-crawler charts/edusharing-crawler
-          ls charts
 
       - name: Push Helm Chart
         env:
