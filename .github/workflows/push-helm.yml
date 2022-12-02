@@ -1,9 +1,8 @@
 name: PushHelm
 on:
   push:
-    branches:
-    - main
-
+    # branches:
+    # - main
 
 jobs:
   publish:
