@@ -3,7 +3,7 @@ image:
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart appVersion.
   # Tag anpassen
-  tag: "0.0.8"
+  tag: "0.0.15"
 
 nameOverride: ""
 fullnameOverride: ""
@@ -16,25 +16,77 @@ resources: {}
   #   cpu: 500m
   #   memory: 512Mi
 
-# envs depend on crawler, only CRAWLER and SCHEDULE are always required
+# DO NOT FORGET TO SET UP SPLASH FOR CRAWLER TO WORK
+
+# ENVs depend on crawler, however these are always required:
+#   CRAWLER, SCHEDULE, EDU_SHARING_BASE_URL, EDU_SHARING_USERNAME, EDU_SHARING_PASSWORD, LOG_LEVEL
 env:
 - name: CRAWLER
   value: hello_world
 - name: SCHEDULE
   value: "*-*-13:30"
-#   - name: EDU_SHARING_BASE_URL
-#     valueFrom:
-#       secretKeyRef:
-#         name: edusharing-secret
-#         key: url
-#   - name: EDU_SHARING_USERNAME
-#     valueFrom:
-#       secretKeyRef:
-#         name: edusharing-secret
-#         key: username
-#   - name: edu-sharing-password
-#     valueFrom:
-#       secretKeyRef:
-#         name: edusharing-secret
-#         key: password
+- name: LOG_LEVEL
+  value: "INFO"
+# - name: EDU_SHARING_BASE_URL
+#   valueFrom:
+#     secretKeyRef:
+#       name: edusharing-secret
+#       key: url
+# - name: EDU_SHARING_USERNAME
+#   valueFrom:
+#     secretKeyRef:
+#       name: edusharing-secret
+#       key: username
+# - name: EDU_SHARING_PASSWORD
+#   valueFrom:
+#     secretKeyRef:
+#       name: edusharing-secret
+#       key: password
 
+# extra envs for:
+#    - mediothek-pixiothek-spider
+#    - merlin-spider
+#    - sodix-spider
+# env:
+# - name: SPLASH_URL
+#   value: splash_url
+# - name: DRY_RUN
+#   value: "False"
+# - name: SODIX_USER
+#   valueFrom:
+#     secretKeyRef:
+#       name: sodix_secret_name
+#       key: username
+# - name: SODIX_PASSWORD
+#   valueFrom:
+#     secretKeyRef:
+#       name: sodix_secret_name
+#       key: password
+
+
+# extra envs for:
+#    - sodix-permissions
+# env:
+# - name: SODIX_BLACKLIST_PATH
+#   value: "/oeh-search-etl/schulcloud/sodix/blacklist.json"
+
+
+# extra envs for:
+#     - h5p_upload
+# env:
+# - name: S3_ACCESS_KEY
+#   valueFrom:
+#     secretKeyRef:
+#       name: s3-secret
+#       key: s3_access_key
+# - name: S3_SECRET_KEY
+#   valueFrom:
+#     secretKeyRef:
+#       name: s3-secret
+#       key: s3_access_secret
+# - name: S3_ENDPOINT_URL
+#   value: http://s3-enpoint/
+# - name: S3_BUCKET_NAME
+#   value: some-bucket-name
+# - name: S3_DOWNLOAD_DIRECTORY
+#   value: s3_download
