@@ -19,7 +19,7 @@ resources: {}
 # DO NOT FORGET TO SET UP SPLASH FOR CRAWLER TO WORK
 
 # ENVs depend on crawler, however these are always required:
-#   CRAWLER, SCHEDULE, EDU_SHARING_BASE_URL, EDU_SHARING_USERNAME, EDU_SHARING_PASSWORD, LOG_LEVEL
+#   CRAWLER, SCHEDULE, LOG_LEVEL; EDU_SHARING_BASE_URL, EDU_SHARING_USERNAME, EDU_SHARING_PASSWORD
 env:
 - name: CRAWLER
   value: hello_world
@@ -44,9 +44,9 @@ env:
 #       key: password
 
 # extra envs for:
-#    - mediothek-pixiothek-spider
-#    - merlin-spider
-#    - sodix-spider
+#    - mediothek_pixiothek-spider
+#    - merlin_spider
+#    - sodix_spider
 # env:
 # - name: SPLASH_URL
 #   value: splash_url
@@ -63,9 +63,29 @@ env:
 #       name: sodix_secret_name
 #       key: password
 
+# extra envs for:
+#    - oeh_spider
+env:
+# - name: DRY_RUN
+#   value: "False"
+# - name: SPLASH_URL
+#   value: splash_url
+# - name: OEH_IMPORT_SOURCES
+#   value: "oeh,wirlernenonline_spider,serlo_spider,youtube_spider"
+# - name: SODIX_USER
+#   valueFrom:
+#     secretKeyRef:
+#       name: sodix_secret_name
+#       key: username
+# - name: SODIX_PASSWORD
+#   valueFrom:
+#     secretKeyRef:
+#       name: sodix_secret_name
+#       key: password
+
 
 # extra envs for:
-#    - sodix-permissions
+#    - sodix_permissions
 # env:
 # - name: SODIX_BLACKLIST_PATH
 #   value: "/oeh-search-etl/schulcloud/sodix/blacklist.json"
