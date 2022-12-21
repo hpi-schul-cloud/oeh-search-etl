@@ -3,7 +3,7 @@ image:
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart appVersion.
   # Tag anpassen
-  tag: "0.0.15"
+  tag: "0.0.17"
 
 nameOverride: ""
 fullnameOverride: ""
@@ -65,7 +65,7 @@ env:
 
 # extra envs for:
 #    - oeh_spider
-env:
+# env:
 # - name: DRY_RUN
 #   value: "False"
 # - name: SPLASH_URL

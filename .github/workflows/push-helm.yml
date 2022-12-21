@@ -1,4 +1,4 @@
-name: PushHelm
+name: Push Helm
 on:
   push:
     # branches:
