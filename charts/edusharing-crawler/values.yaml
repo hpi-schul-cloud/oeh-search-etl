@@ -3,7 +3,7 @@ image:
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart appVersion.
   # Tag anpassen
-  tag: "0.0.17"
+  tag: "0.1.4"
 
 nameOverride: ""
 fullnameOverride: ""
@@ -85,10 +85,7 @@ env:
 
 
 # extra envs for:
-#    - sodix_permissions
-# env:
-# - name: SODIX_BLACKLIST_PATH
-#   value: "/oeh-search-etl/schulcloud/sodix/blacklist.json"
+#    - permission_updater
 
 
 # extra envs for:
