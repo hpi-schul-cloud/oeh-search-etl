@@ -7,20 +7,26 @@ from schulcloud.edusharing import EdusharingAPI, Node, RequestFailedException
 from schulcloud.util import Environment
 
 
-ENV_VARS = ['EDU_SHARING_BASE_URL', 'EDU_SHARING_USERNAME', 'EDU_SHARING_PASSWORD']
+ENV_VARS = ['EDU_SHARING_BASE_URL', 'EDU_SHARING_USERNAME_CRAWLER', 'EDU_SHARING_PASSWORD_CRAWLER',
+            'EDU_SHARING_USERNAME_ADMIN', 'EDU_SHARING_PASSWORD_ADMIN']
 
 
 class PermissionUpdater:
     def __init__(self):
         self.env = Environment(env_vars=ENV_VARS)
-        self.api = EdusharingAPI(
+        self.api_admin = EdusharingAPI(
             self.env['EDU_SHARING_BASE_URL'],
-            self.env['EDU_SHARING_USERNAME'],
-            self.env['EDU_SHARING_PASSWORD']
+            self.env['EDU_SHARING_USERNAME_ADMIN'],
+            self.env['EDU_SHARING_PASSWORD_ADMIN'],
+        )
+        self.api_crawler = EdusharingAPI(
+            self.env['EDU_SHARING_BASE_URL'],
+            self.env['EDU_SHARING_USERNAME_CRAWLER'],
+            self.env['EDU_SHARING_PASSWORD_CRAWLER'],
         )
         self.node_cache: dict[str, Node] = {}
 
-    def get_node_by_path(self, path: str) -> Node:
+    def get_node_by_path(self, path: str, api: EdusharingAPI) -> Node:
         """
         Get the node of Edu-Sharing by path.
         @param path: Path to node
@@ -32,15 +38,16 @@ class PermissionUpdater:
             pass
         parent_path = os.path.dirname(path)
         if parent_path:
-            parent_id = self.get_node_by_path(parent_path).id
+            parent_id = self.get_node_by_path(parent_path, api).id
         else:
             parent_id = '-userhome-'
         node_name = os.path.basename(path)
         node = None
-        for child in self.api.get_children(parent_id, type='folders'):
+        for child in api.get_children(parent_id, type='folders'):
             self.node_cache[os.path.join(parent_path, child.name)] = child
             if child.name == node_name:
                 node = child
+        self.node_cache = {}
         if node is None:
             raise PathNotFoundException(path)
         else:
@@ -54,16 +61,21 @@ class PermissionUpdater:
         permissions = json.load(file)['permissions']
         file.close()
         for permission in permissions:
-            print('Check', permission['path'])
+            if permission['path'] == "SYNC_OBJ/FWU" or permission['path'] == "SYNC_OBJ/H5P":
+                api = self.api_crawler
+            else:
+                api = self.api_admin
             try:
-                node = self.get_node_by_path(permission['path'])
-                current_groups, inherited = self.api.get_permissions_groups(node.id)
+                node = self.get_node_by_path(permission['path'], api)
+                current_groups, inherited = api.get_permissions_groups(node.id)
                 current_groups.sort()
                 new_groups: list[str] = permission['permitted_groups']
                 new_groups.sort()
                 if not (current_groups == new_groups and inherited == permission['inherit']):
-                    print(f'Change {current_groups} -> {new_groups}')
-                    self.api.set_permissions(node.id, permission['permitted_groups'], permission['inherit'])
+                    print(f'{permission["path"]} change {current_groups} -> {new_groups}')
+                    api.set_permissions(node.id, permission['permitted_groups'], permission['inherit'])
+                else:
+                    print(f'Permissions already correct: {permission["path"]}')
             except PathNotFoundException:
                 print(f'Warning: Could not find {permission["path"]}', file=sys.stderr)
             except KeyboardInterrupt:
