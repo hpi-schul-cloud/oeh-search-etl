@@ -367,6 +367,7 @@ class EduSharing:
     def transform_item(self, uuid, spider, item):
         spaces = {
             "ccm:replicationsource": spider.name,
+            "ccm:replicationsource_DISPLAYNAME": get_spider_friendly_name(spider.name),
             "ccm:replicationsourceid": item["sourceId"],
             "ccm:replicationsourcehash": item["hash"],
             "ccm:replicationsourceuuid": uuid,
@@ -378,6 +379,8 @@ class EduSharing:
             if "aggregationLevel" in item["lom"]["general"]
             else None,
             "cclom:title": item["lom"]["general"]["title"],
+            "ccm:hpi_lom_general_aggregationlevel": str(item["lom"]["general"]["aggregationLevel"]),
+            "ccm:hpi_searchable": str(item["searchable"]),
         }
         if "identifier" in item["lom"]["general"]:
             spaces["cclom:general_identifier"] = item["lom"]["general"]["identifier"]
@@ -552,6 +555,23 @@ class EduSharing:
                 spaces[key] = list([x for y in spaces[key] for x in y])
             if not type(spaces[key]) is list:
                 spaces[key] = [spaces[key]]
+
+        # Relation information, according to the LOM-DE.doc#7 specifications: http://sodis.de/lom-de/LOM-DE.doc
+        if "relation" in item["lom"]:
+            spaces["ccm:hpi_lom_relation"] = item["lom"]["relation"]
+            # Since Edu-Sharing has no further information about the schema of this attribute it is better to treat it
+            # as a list of strings and not as a JSON.
+            for i, element in enumerate(spaces["ccm:hpi_lom_relation"]):
+                # JSON expects double quotes.
+                element_str = str(element).replace("\'", "\"")
+                # JSON to Python dictionary
+                element_dict = json.loads(element_str)
+
+                # We expect and prefer single quotes in the result.
+                relation_value = json.dumps(element_dict, sort_keys=True).replace("\"", "\'")
+                # Remove redundant white spaces.
+                relation_value = ' '.join(relation_value.split())
+                spaces["ccm:hpi_lom_relation"][i] = relation_value
 
         return spaces
 

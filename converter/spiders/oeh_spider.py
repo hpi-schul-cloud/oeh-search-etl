@@ -93,3 +93,12 @@ class OEHSpider(EduSharingBase):
             )
             return False
         return True
+
+    def getPermissions(self, response):
+        permissions = LomBase.getPermissions(self, response)
+
+        permissions.replace_value("public", False)
+        permissions.add_value("autoCreateGroups", True)
+        permissions.add_value("groups", ["public"])
+
+        return permissions

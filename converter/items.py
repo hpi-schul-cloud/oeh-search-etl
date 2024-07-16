@@ -193,6 +193,18 @@ class LomClassificationItem(Item):
     taxonPath = Field(output_processor=JoinMultivalues())
     # ToDo: LOM classification 'taxonPath' has no equivalent property in edu-sharing, might be obsolete
 
+class LomRelationResourceItem(Item):
+    identifier = Field(output_processor=JoinMultivalues())
+    catalog = Field()
+    entry = Field()
+    description = Field()
+
+class LomRelationItem(Item):
+    """
+    Following the LOM-DE.doc#7 (Relation) specifications: http://sodis.de/lom-de/LOM-DE.doc .
+    """
+    kind = Field()
+    resource = Field(serializer=LomRelationResourceItem)
 
 class LomBaseItem(Item):
     """
@@ -453,6 +465,14 @@ class LomEducationalItemLoader(ItemLoader):
 #    default_output_processor = TakeFirst()
 class LomClassificationItemLoader(ItemLoader):
     default_item_class = LomClassificationItem
+    default_output_processor = TakeFirst()
+
+class LomRelationResourceItemLoader(ItemLoader):
+    default_item_class = LomRelationResourceItem
+    default_output_processor = TakeFirst()
+
+class LomRelationItemLoader(ItemLoader):
+    default_item_class = LomRelationItem
     default_output_processor = TakeFirst()
 
 
