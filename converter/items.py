@@ -206,6 +206,14 @@ class LomRelationItem(Item):
     kind = Field()
     resource = Field(serializer=LomRelationResourceItem)
 
+class LomAnnotationItem(Item):
+    """
+    Following the LOM-DE.doc#8 (Annotation) specifications: http://sodis.de/lom-de/LOM-DE.doc .
+    """
+    entity = Field()
+    date = Field()
+    description = Field()
+
 class LomBaseItem(Item):
     """
     LomBaseItem provides the nested structure for LOM (Sub-)Elements. No metadata is saved here.
