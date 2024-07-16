@@ -7,6 +7,7 @@ converter/.env.*
 *.csv
 .env
 .env.*
-nohups
+nohups/
+nohup.out
 out
 docker_run.sh

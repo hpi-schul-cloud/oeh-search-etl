@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
 from pathlib import Path  # python3 only
+
+import scrapy
+
 import converter.env as env
+from scrapy.utils.log import configure_logging
 
 # Scrapy settings for project
 #
@@ -19,6 +24,17 @@ NEWSPIDER_MODULE = "converter.spiders"
 LOG_FILE = env.get("LOG_FILE", allow_null=True)
 LOG_LEVEL = env.get("LOG_LEVEL", default="INFO")
 LOG_FORMATTER = "converter.custom_log_formatter.CustomLogFormatter"
+
+configure_logging(settings = {
+    "LOG_FILE": LOG_FILE,
+    "LOG_LEVEL": LOG_LEVEL,
+    "LOG_FORMATTER": LOG_FORMATTER
+})
+
+TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
+# fixes Scrapy DeprecationWarning on startup (Scrapy v2.10+)
+# (see: https://docs.scrapy.org/en/latest/topics/request-response.html#request-fingerprinter-implementation):
 
 # Default behaviour for regular crawlers of non-license-controlled content
 # When set True, every item will have GROUP_EVERYONE attached in edu-sharing
@@ -63,6 +79,10 @@ ROBOTSTXT_OBEY = True
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
 DOWNLOAD_DELAY = 0
+
+# Configure a delay between the parsing executions. (default: 0)
+PARSE_DELAY = 0
+
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN = 16
 # CONCURRENT_REQUESTS_PER_IP = 16
@@ -96,7 +116,13 @@ DOWNLOAD_DELAY = 0
 EXTENSIONS = {
     #  'scrapy.extensions.telnet.TelnetConsole': None,
     #  'scrapy.extensions.closespider.CLOSESPIDER_PAGECOUNT': 4,
+    "scrapy.extensions.periodic_log.PeriodicLog": 0,
 }
+# PeriodicLog Extension Settings
+# (see: https://docs.scrapy.org/en/latest/topics/extensions.html#periodic-log-extension)
+PERIODIC_LOG_STATS = True
+PERIODIC_LOG_DELTA = True
+PERIODIC_LOG_TIMING_ENABLED = True
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
@@ -106,6 +132,7 @@ ITEM_PIPELINES = {
     "converter.pipelines.FilterSparsePipeline": 25,
     "converter.pipelines.LOMFillupPipeline": 100,
     "converter.pipelines.NormLicensePipeline": 125,
+    "converter.pipelines.NormLanguagePipeline": 150,
     "converter.pipelines.ConvertTimePipeline": 200,
     "converter.pipelines.ProcessValuespacePipeline": 250,
     "converter.pipelines.ProcessThumbnailPipeline": 300,
@@ -119,6 +146,13 @@ ITEM_PIPELINES = {
         else "converter.pipelines.EduSharingStorePipeline"
     ): 1000,
 }
+
+# add custom pipelines from the .env file, if any
+ADDITIONAL_PIPELINES = env.get("CUSTOM_PIPELINES", True)
+if ADDITIONAL_PIPELINES:
+    for pipe in map(lambda p: p.split(":"), ADDITIONAL_PIPELINES.split(",")):
+        logging.info("Enabling custom pipeline: " + pipe[0])
+        ITEM_PIPELINES[pipe[0]] = int(pipe[1])
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

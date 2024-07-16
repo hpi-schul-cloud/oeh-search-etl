@@ -1,14 +1,11 @@
-import copy
-import json
-import logging
-import os
-
+import scrapy
+from scrapy import Request
 from scrapy.spiders import CrawlSpider
 
-from converter.es_connector import EduSharing
-from converter.items import *
 from converter.constants import *
-import scrapy
+from converter.items import *
+from .base_classes import LomBase
+
 
 from converter.spiders.base_classes import LomBase
 
@@ -18,70 +15,54 @@ class MediothekPixiothekSpider(CrawlSpider, LomBase):
     This crawler fetches data from the Mediothek/Pixiothek. The API request sends all results in one page. The outcome
     is an JSON array which will be parsed to their elements.
 
-    Author: Ioannis Koumarelas, Schul-Cloud, Content team.
+    Author: Ioannis Koumarelas, ioannis.koumarelas@gmail.com , Schul-Cloud, Content team.
     """
 
     name = "mediothek_pixiothek_spider"
     url = "https://www.schulportal-thueringen.de/"  # the url which will be linked as the primary link to your source (should be the main url of your site)
     friendlyName = "MediothekPixiothek"  # name as shown in the search ui
-    version = "0.2"  # the version of your crawler, used to identify if a reimport is necessary
-    apiUrl = "https://www.schulportal-thueringen.de/tip-ms/api/public_mediothek_metadatenexport/publicMediendatei"
-    # Alternatively, you can load the file from a local path
-    # "file://LOCAL_FILE_PATH"  # e.g., file:///data/file.json
+    version = "0.1.1"  # last update: 2022-05-09
+    start_urls = [
+        "https://www.schulportal-thueringen.de/tip-ms/api/public_mediothek_metadatenexport/publicMediendatei"
+    ]
+    custom_settings = {
+        "ROBOTSTXT_OBEY": False,
+    }
 
     def __init__(self, **kwargs):
         LomBase.__init__(self, **kwargs)
 
     def start_requests(self):
-        yield scrapy.Request(
-            url=self.apiUrl,
-            callback=self.parse,
-        )
+        for url in self.start_urls:
+            yield Request(url=url, callback=self.parse)
 
-    def parse(self, response: scrapy.http.TextResponse, **kwargs):
+    async def parse(self, response: scrapy.http.TextResponse, **kwargs):
         data = self.getUrlData(response.url)
         response.meta["rendered_data"] = data
         # as of Scrapy 2.2 the JSON of a TextResponse can be loaded like this,
         # see: https://doc.scrapy.org/en/latest/topics/request-response.html#scrapy.http.TextResponse.json
         elements = response.json()
+        for element in elements:
+            copy_response = response.copy()
+            # Passing the dictionary for easier access to its attributes.
+            copy_response.meta["item"] = element
+            yield await LomBase.parse(self, response=copy_response)
 
-        prepared_elements = [self.prepare_element(element_dict) for element_dict in elements]
 
-        collection_elements = self.prepare_collections(prepared_elements)
-
-        for i, element_dict in enumerate(collection_elements):
-
-            copyResponse = response.copy()
-
-            # Passing the dictionary for easier access to attributes.
-            copyResponse.meta["item"] = element_dict
-
-            # In case JSON string representation is preferred:
-            json_str = json.dumps(element_dict, indent=4, sort_keys=True, ensure_ascii=False)
-            copyResponse._set_body(json_str)
-
-            if self.hasChanged(copyResponse):
-                yield self.handleEntry(copyResponse)
-
-            # LomBase.parse() has to be called for every individual instance that needs to be saved to the database.
-            LomBase.parse(self, copyResponse)
-
-    def getId(self, response):
+    def getId(self, response) -> str:
         # Element response as a Python dict.
-        element_dict = response.meta["item"]
-
-        return element_dict["id"]
+        element_dict: dict = response.meta["item"]
+        element_id: str = element_dict["id"]
+        return element_id
 
     def getHash(self, response):
         # Element response as a Python dict.
         element_dict = response.meta["item"]
-        id = element_dict["id"]
-
+        element_id = element_dict["id"]
+        element_timestamp = element_dict["pts"]
         # presentation timestamp (PTS)
-        pts = element_dict["pts"]
-
         # date_object = datetime.strptime(hash, "%Y-%m-%d %H:%M:%S.%f").date()
-        return hash(hash(id) + hash(pts))
+        return element_id + element_timestamp
 
     def mapResponse(self, response):
         r = ResponseItemLoader(response=response)
@@ -89,9 +70,6 @@ class MediothekPixiothekSpider(CrawlSpider, LomBase):
         r.add_value("headers", response.headers)
         r.add_value("url", self.getUri(response))
         return r
-
-    def handleEntry(self, response):
-        return LomBase.parse(self, response)
 
     def getBase(self, response):
         base = LomBase.getBase(self, response)
@@ -102,6 +80,8 @@ class MediothekPixiothekSpider(CrawlSpider, LomBase):
         # TODO: "For licensing reasons, this content is only available to users registered in the Thuringian school
         #  portal."
         base.add_value("thumbnail", element_dict["previewImageUrl"])
+
+        base.add_value("searchable", element_dict.get("searchable", "0"))
 
         return base
 
@@ -134,17 +114,18 @@ class MediothekPixiothekSpider(CrawlSpider, LomBase):
         return element_dict["downloadUrl"]
 
     def getLicense(self, response):
-        license = LomBase.getLicense(self, response)
+        license_loader = LomBase.getLicense(self, response)
 
         # Element response as a Python dict.
         element_dict = response.meta["item"]
 
-        if "oeffentlich" in element_dict and element_dict["oeffentlich"] == "0":  # private
-            license.replace_value("internal", Constants.LICENSE_NONPUBLIC)
-        else:
-            license.replace_value("internal", Constants.LICENSE_COPYRIGHT_LAW)  # public
-
-        return license
+        license_loader.replace_value(
+            "internal",
+            Constants.LICENSE_NONPUBLIC
+            if element_dict["oeffentlich"] == "1"
+            else Constants.LICENSE_COPYRIGHT_LAW,
+        )
+        return license_loader
 
     def getLOMTechnical(self, response):
         technical = LomBase.getLOMTechnical(self, response)
@@ -154,6 +135,15 @@ class MediothekPixiothekSpider(CrawlSpider, LomBase):
         technical.add_value("size", len(response.body))
 
         return technical
+
+    @staticmethod
+    def is_public(element_dict) -> bool:
+        """
+        Licensing information is controlled via the 'oeffentlich' flag. When it is '1' it is available to the public,
+        otherwise only to Thuringia. Therefore, when the latter happens we set the public to private, and set the groups
+        and mediacenters accordingly.
+        """
+        permissions = LomBase.getPermissions(self, response)
 
     def getPermissions(self, response):
         """
@@ -170,7 +160,7 @@ class MediothekPixiothekSpider(CrawlSpider, LomBase):
         element_dict = response.meta["item"]
         permissions.replace_value('public', False)
         if "oeffentlich" in element_dict and element_dict["oeffentlich"] == "0":  # private
-            permissions.add_value('groups', ['Thuringia'])
+            permissions.add_value('groups', ['Thuringia-private'])
             # permissions.add_value('mediacenters', [self.name])  # only 1 mediacenter.
         else:
             permissions.add_value('groups', ['Thuringia-public'])
@@ -194,17 +184,6 @@ class MediothekPixiothekSpider(CrawlSpider, LomBase):
         relation.add_value("resource", resource)
 
         return relation
-
-    def getLOMAnnotation(self, response=None) -> LomAnnotationItemLoader:
-        annotation = LomBase.getLOMAnnotation(self, response)
-
-        # Element response as a Python dict.
-        element_dict = response.meta["item"]
-
-        annotation.add_value("entity", element_dict["annotation"]["entity"])
-        annotation.add_value("description", element_dict["annotation"]["description"])
-
-        return annotation
 
     def prepare_collections(self, prepared_elements):
         """
@@ -320,12 +299,12 @@ class MediothekPixiothekSpider(CrawlSpider, LomBase):
                 parent_element["downloadUrl"] = default_download_url + parent_element["id"]
                 parent_element["title"] = parent_element["serientitel"]
 
-            parent_element["annotation"] = {"entity": "crawler", "description": "searchable==1"}
+            parent_element["searchable"] = 1
             parent_element["aggregation_level"] = 2
             parent_element["uuid"] = edusharing.buildUUID(parent_element["downloadUrl"])
 
             for element in group:
-                element["annotation"] = {"entity": "crawler", "description": "searchable==0"}
+                element["searchable"] = 0
                 element["aggregation_level"] = 1
                 element["uuid"] = edusharing.buildUUID(element["downloadUrl"])
 
@@ -377,12 +356,12 @@ class MediothekPixiothekSpider(CrawlSpider, LomBase):
 
             parent_element["title"] = parent_element["einzeltitel"]
 
-            parent_element["annotation"] = {"entity": "crawler", "description": "searchable==1"}
+            parent_element["searchable"] = 1
             parent_element["aggregation_level"] = 2
             parent_element["uuid"] = edusharing.buildUUID(parent_element["downloadUrl"])
 
             for element in group:
-                element["annotation"] = {"entity": "crawler", "description": "searchable==0"}
+                element["searchable"] = 0
                 element["aggregation_level"] = 1
                 element["uuid"] = edusharing.buildUUID(element["downloadUrl"])
 

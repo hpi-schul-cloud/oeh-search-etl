@@ -1,4 +1,3 @@
-import scrapy as scrapy
 import xmltodict as xmltodict
 from lxml import etree
 from scrapy.spiders import CrawlSpider
@@ -37,7 +36,7 @@ class MerlinSpider(CrawlSpider, LomBase):
             headers={"Accept": "application/xml", "Content-Type": "application/xml"},
         )
 
-    def parse(self, response: scrapy.http.Response):
+    async def parse(self, response: scrapy.http.Response):
         print("Parsing URL: " + response.url)
 
         # Call Splash only once per page (that contains multiple XML elements).
@@ -83,16 +82,8 @@ class MerlinSpider(CrawlSpider, LomBase):
                     # copyResponse._set_body(json.dumps(copyResponse.meta['item'], indent=1, ensure_ascii=False))
                     copyResponse._set_body(element_xml_str)
 
-                    if self.hasChanged(copyResponse):
-                        yield self.handleEntry(copyResponse)
-
-                    # LomBase.parse() has to be called for every individual instance that needs to be saved to the database.
-                    LomBase.parse(self, copyResponse)
-                except Exception as e:
-                    print("Issues with the element: " + str(element_dict["id_local"]) if "id_local" in element_dict else "")
-                    print(str(e))
-
-        current_expected_count = (self.page+1) * self.limit
+                # LomBase.parse() has to be called for every individual instance that needs to be saved to the database.
+                await LomBase.parse(self, copyResponse)
 
         # TODO: To not stress the Rest APIs.
         # time.sleep(0.1)
@@ -137,8 +128,8 @@ class MerlinSpider(CrawlSpider, LomBase):
         r.add_value("url", self.getUri(response))
         return r
 
-    def handleEntry(self, response):
-        return LomBase.parse(self, response)
+    async def handleEntry(self, response):
+        return await LomBase.parse(self, response)
 
     def getBase(self, response):
         base = LomBase.getBase(self, response)
@@ -146,17 +137,19 @@ class MerlinSpider(CrawlSpider, LomBase):
         # Element response as a Python dict.
         element_dict = dict(response.meta["item"])
 
-        thumbnails = []
+        base.add_value("thumbnail", element_dict.get("thumbnail", ""))  # get or default
 
         # As a backup, if no other thumbnail URL is available.
         element_dict["hardcodedDefaultLogoUrl"] = "/logos/bs_logos/merlin.png"
 
-        # By the order of preference. As soon as one of these default thumbnails is available you keep that. This is
-        # done in pipelines.py/ProcessThumbnailPipeline.
-        thumbnails.append(element_dict["thumbnail"])
-        for thumbnail in ["srcLogoUrl", "logo", "hardcodedDefaultLogoUrl"]:
-            thumbnails.append("https://merlin.nibis.de" + thumbnail)
-        base.add_value("thumbnail", thumbnails)
+        # By the order of preference. As soon as one of these default thumbnails is available you keep that.
+        for default_thumbnail in ["srcLogoUrl", "logo", "hardcodedDefaultLogoUrl"]:
+            if default_thumbnail in element_dict:
+                base.add_value("defaultThumbnail", "https://merlin.nibis.de" + element_dict[default_thumbnail])
+                break
+
+        # Adding a default searchable value to constitute this element (node) as a valid-to-be-returned object.
+        base.add_value("searchable", "1")
 
         return base
 
@@ -262,6 +255,7 @@ class MerlinSpider(CrawlSpider, LomBase):
         element_dict = response.meta["item"]
 
         permissions.replace_value("public", False)
+        permissions.add_value("autoCreateGroups", True)
 
         groups = []
 
@@ -272,11 +266,15 @@ class MerlinSpider(CrawlSpider, LomBase):
         if len(county_ids) == 1 and str(county_ids[0]) == public_county:
             # Add to state-wide public group.
             # groups.append("state-LowerSaxony-public")
-            groups.append("LowerSaxony")
+            groups.append("LowerSaxony-public")
 
             # Add 1 group per County-code, which in this case is just "100" (3100).
             groups.extend(county_ids)
         else:
+            # Add to state-wide private/licensed group.
+            # groups.append("state-LowerSaxony-licensed")
+            groups.append("LowerSaxony-private")
+
             # If County code 100 (country-wide) is included in the list, remove it.
             if public_county in county_ids:
                 county_ids.remove(public_county)
@@ -320,9 +318,6 @@ class MerlinSpider(CrawlSpider, LomBase):
                 thumbnail_prepared = thumbnail_prepared[:subpath_position] + "/" + thumbnail_prepared[subpath_position + 1:]
 
             element_dict["thumbnail"] = thumbnail_prepared
-
-        # Adding a default searchable value to constitute this element (node) as a valid-to-be-returned object.
-        element_dict["annotation"] = {"entity": "crawler", "description": "searchable==1"}
 
         return element_dict
 

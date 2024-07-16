@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.11.6-slim-bookworm
 
 ENV TZ="Europe/Berlin"
 
@@ -7,9 +7,9 @@ RUN apt-get install ca-certificates
 WORKDIR /oeh-search-etl
 
 COPY requirements.txt .
-RUN python3.9 -m pip install --no-cache-dir -r requirements.txt
+RUN python3.11 -m pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 COPY ./schulcloud/edusharing_setup.py ./edusharing_setup.py
 
-CMD [ "bash", "-c", "python3.9 edusharing_setup.py" ]
+CMD [ "bash", "-c", "python3.11 edusharing_setup.py" ]
