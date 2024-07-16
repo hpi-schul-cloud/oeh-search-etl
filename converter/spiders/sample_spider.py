@@ -1,9 +1,7 @@
 from scrapy.spiders import CrawlSpider
-from converter.items import *
 import time
-from w3lib.html import remove_tags, replace_escape_chars
-from converter.spiders.lom_base import LomBase
-import json
+from .base_classes import LomBase
+
 
 # Sample Spider, using a SitemapSpider to crawl your web page
 # Can be used as a template for your custom spider
@@ -17,8 +15,8 @@ class SampleSpider(CrawlSpider, LomBase):
     def __init__(self, **kwargs):
         LomBase.__init__(self, **kwargs)
 
-    def parse(self, response):
-        return LomBase.parse(self, response)
+    async def parse(self, response):
+        return await LomBase.parse(self, response)
 
     # return a (stable) id of the source
     def getId(self, response):

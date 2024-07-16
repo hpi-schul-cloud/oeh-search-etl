@@ -1,26 +1,19 @@
-from scrapy.spiders import CrawlSpider
-from converter.items import *
-import time
-from w3lib.html import remove_tags, replace_escape_chars
-from converter.spiders.lom_base import LomBase
-from converter.spiders.rss_base import RSSBase
-import json
-import logging
-from html.parser import HTMLParser
-from converter.pipelines import ProcessValuespacePipeline
-import re
-from converter.valuespace_helper import ValuespaceHelper
-from converter.constants import Constants
+from scrapy import Request
 
-# Spider to fetch RSS from planet schule
+from .base_classes import LomBase, RSSBase
+
+
 class IRightsSpider(RSSBase):
     name = "irights_spider"
     friendlyName = "iRights.info"
     start_urls = ["https://irights.info/feed"]
-    version = "0.1.0"
+    version = "0.1.1"   # last update: 2022-02-21
 
     def __init__(self, **kwargs):
         RSSBase.__init__(self, **kwargs)
+
+    def start_requests(self):
+        yield Request(url=self.start_urls[0], callback=self.parse)
 
     def getLOMGeneral(self, response):
         general = RSSBase.getLOMGeneral(self, response)

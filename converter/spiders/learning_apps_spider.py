@@ -3,14 +3,9 @@ from scrapy.http import Response
 
 from converter import items
 from converter.items import *
-import time
-from w3lib.html import remove_tags, replace_escape_chars
-from converter.spiders.lom_base import LomBase
-from converter.valuespace_helper import Valuespaces
-import requests
-from html.parser import HTMLParser
-from converter.constants import Constants
-
+from .base_classes import LomBase
+import html
+import scrapy
 
 class LearningAppsSpider(scrapy.Spider, LomBase):
     name = "learning_apps_spider"
@@ -55,8 +50,8 @@ class LearningAppsSpider(scrapy.Spider, LomBase):
         offset += len(response.xpath('//results/app'))
         yield self.startRequest(response.meta['cat'], response.meta['subcat'], offset)
 
-    def parse(self, response):
-        return LomBase.parse(self, response)
+    async def parse(self, response):
+        return await LomBase.parse(self, response)
 
     def getValuespaces(self, response):
         valuespaces = LomBase.getValuespaces(self, response)
@@ -104,7 +99,7 @@ class LearningAppsSpider(scrapy.Spider, LomBase):
         general = LomBase.getLOMGeneral(self, response)
         general.add_value(
             "title",
-            HTMLParser().unescape(response.meta["item"].xpath("@title").get()),
+            html.unescape(response.meta["item"].xpath("@title").get()),
         )
         general.add_value(
             "description", self.html2Text(response.meta["item"].xpath("@task").get())
