@@ -1,17 +1,12 @@
-from scrapy.spiders import CrawlSpider
 from converter.items import *
-import time
-from w3lib.html import remove_tags, replace_escape_chars
-from converter.spiders.lom_base import LomBase
-from converter.spiders.json_base import JSONBase
+from .base_classes import LomBase
+from .base_classes import JSONBase
 import json
 import logging
 import requests
-from html.parser import HTMLParser
-from converter.pipelines import ProcessValuespacePipeline
-import re
-from converter.valuespace_helper import ValuespaceHelper
+import html
 from converter.constants import *
+import scrapy
 
 # Spider to fetch RSS from planet schule
 class WirLernenOnlineSpider(scrapy.Spider, LomBase, JSONBase):
@@ -87,7 +82,7 @@ class WirLernenOnlineSpider(scrapy.Spider, LomBase, JSONBase):
         yield self.startRequest("edutool")
 
     def parseRequest(self, response):
-        results = json.loads(response.body_as_unicode())
+        results = json.loads(response.body)
         if results:
             for item in results:
                 copyResponse = response.copy()
@@ -101,9 +96,9 @@ class WirLernenOnlineSpider(scrapy.Spider, LomBase, JSONBase):
 
     def getType(self, response):
         if response.meta["type"] == "edusource":
-            return Constants.TYPE_SOURCE
+            return Constants.NEW_LRT_MATERIAL
         elif response.meta["type"] == "edutool":
-            return Constants.TYPE_TOOL
+            return Constants.NEW_LRT_TOOL
         return None
 
     # thumbnail is always the same, do not use the one from rss
@@ -112,9 +107,8 @@ class WirLernenOnlineSpider(scrapy.Spider, LomBase, JSONBase):
         base.replace_value(
             "thumbnail", self.get("acf.thumbnail.url", json=response.meta["item"])
         )
-        base.replace_value("type", self.getType(response))
         fulltext = self.get("acf.long_text", json=response.meta["item"])
-        base.replace_value("fulltext", HTMLParser().unescape(fulltext))
+        base.replace_value("fulltext", html.unescape(fulltext))
         try:
             notes = '\n'.join(list(map(lambda x: x['notes'], self.get('acf.notizen', json=response.meta["item"]))))
             base.replace_value('notes', notes)
@@ -126,7 +120,7 @@ class WirLernenOnlineSpider(scrapy.Spider, LomBase, JSONBase):
         general = LomBase.getLOMGeneral(self, response)
         general.replace_value(
             "title",
-            HTMLParser().unescape(
+            html.unescape(
                 self.get("title.rendered", json=response.meta["item"])
             ),
         )
@@ -136,7 +130,7 @@ class WirLernenOnlineSpider(scrapy.Spider, LomBase, JSONBase):
             general.add_value("keyword", keywords)
         general.add_value(
             "description",
-            HTMLParser().unescape(
+            html.unescape(
                 self.get("acf.short_text", json=response.meta["item"])
             ),
         )
@@ -166,6 +160,7 @@ class WirLernenOnlineSpider(scrapy.Spider, LomBase, JSONBase):
 
     def getValuespaces(self, response):
         valuespaces = LomBase.getValuespaces(self, response)
+        valuespaces.replace_value("new_lrt", self.getType(response))
         discipline = list(
             map(
                 lambda x: x["value"],

@@ -1,19 +1,18 @@
 from scrapy.spiders import CrawlSpider
 from converter.items import *
 from converter.constants import Constants
-from datetime import datetime
-from w3lib.html import remove_tags, replace_escape_chars
-from converter.spiders.lom_base import LomBase
-from converter.spiders.json_base import JSONBase
+from .base_classes import LomBase, JSONBase
+from scrapy import Request
 import json
-import time
+import logging
+
 
 # spider for GeoGebra
 class GeoGebraSpider(CrawlSpider, LomBase, JSONBase):
     name = "geogebra_spider"
     friendlyName = "GeoGebra"
     url = "https://www.geogebra.org"
-    version = "0.1"
+    version = "0.1.1"
     start_urls = [
         "https://www.geogebra.org/m-sitemap-1.xml",
         "https://www.geogebra.org/m-sitemap-2.xml",
@@ -32,6 +31,11 @@ class GeoGebraSpider(CrawlSpider, LomBase, JSONBase):
 
     def __init__(self, **kwargs):
         LomBase.__init__(self, **kwargs)
+        CrawlSpider.__init__(self, **kwargs)
+
+    def start_requests(self):
+        for url in self.start_urls:
+            yield Request(url = url, callback = self.parse)
 
     def get(self, *params, response):
         data = json.loads(response.body_as_unicode())
@@ -43,14 +47,14 @@ class GeoGebraSpider(CrawlSpider, LomBase, JSONBase):
             split = url.split("/")
             id = split[len(split) - 1]
             apiCall = self.apiUrl.replace("%id", id)
-            yield scrapy.Request(
+            yield Request(
                 url=apiCall, callback=self.parseEntry, meta={"url": url}
             )
             i += 1
 
-    def parseEntry(self, response):
+    async def parseEntry(self, response):
         if self.get("language", response=response) == "de":
-            return LomBase.parse(self, response)
+            return await LomBase.parse(self, response)
         logging.info(
             "Skpping entry with language " + self.get("language", response=response)
         )
@@ -105,7 +109,7 @@ class GeoGebraSpider(CrawlSpider, LomBase, JSONBase):
 
     def getLicense(self, response):
         license = LomBase.getLicense(self, response)
-        license.add_value("url", Constants.LICENSE_CC_BY_SA_30)
+        license.add_value("url", Constants.LICENSE_CC_BY_NC_SA_30)
         return license
 
     def getLOMTechnical(self, response):

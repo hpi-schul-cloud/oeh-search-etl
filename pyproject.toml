@@ -1,0 +1,99 @@
+[project]
+description = "Crawls educational sites for use in wirlernenonline.de"
+authors = [
+    "Torsten Simon <simon@edu-sharing.net>"
+]
+maintainers = [
+    "Andreas Schnäpp <981166+Criamos@users.noreply.github.com>"
+]
+readme = "README.md"
+python = "^3.11"
+homepage = "https://github.com/openeduhub/oeh-search-etl"
+repository = "https://github.com/openeduhub/oeh-search-etl"
+documentation = "https://github.com/openeduhub/oeh-search-etl"
+
+keywords = ["metadata", "oer", "crawl", " wirlernenonline"]
+
+classifiers = [
+    "Framework :: Scrapy",
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Education :: Testing",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+]
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | \venv
+    | _build
+    | build
+    | dist
+  )/
+  | foo.py           # also separately exclude a file named foo.py in
+                     # the root of the project
+)
+'''
+
+[tool.poetry]
+name = "oeh-search-etl"
+version = "2023.08.01"
+description = "Crawls educational sites for use in WirLernenOnline.de"
+authors = ["Torsten Simon <simon@edu-sharing.net>"]
+maintainers = [
+    "Andreas Schnäpp <981166+Criamos@users.noreply.github.com>"
+]
+readme = "Readme.md"
+packages = [{include = "converter"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+wheel = "^0.42.0"
+black = "24.1.1"
+certifi="2024.2.2"
+dateparser="1.2"
+extruct="0.16.0"
+flake8 = "7.0.0"
+html2text="2020.1.16"
+jmespath="1.0.1"
+image = "1.5.33"
+itemadapter="0.8.0"
+itemloaders="1.1.0"
+isodate="0.6.1"
+overrides="3.1.0"
+Pillow="10.1.0"
+playwright="1.41.2"
+pyOpenSSL="23.3.0"
+pytest="8.0.0"
+python-dateutil="2.8.2"
+python-dotenv="1.0.1"
+requests="2.31.0"
+six="1.16.0"
+Scrapy="2.11"
+scrapy-splash="0.9.0"
+urllib3="2.2.0"
+vobject="0.9.6.1"
+w3lib="2.1.2"
+xmltodict="0.13.0"
+trafilatura = "1.7"
+babel = "2.14.0"
+langcodes = {extras = ["data"], version = "^3.3.0"}
+httpx = "0.26"
+async-lru = "2.0.4"
+
+[tool.poetry.group.dev.dependencies]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

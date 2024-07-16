@@ -1,11 +1,5 @@
-from scrapy.spiders import CrawlSpider
 from converter.items import *
-import time
-import logging
-from w3lib.html import remove_tags, replace_escape_chars
-from converter.spiders.lom_base import LomBase
-from converter.valuespace_helper import ValuespaceHelper
-import csv
+from .lom_base import LomBase
 import hashlib
 
 # rss crawler with a list of entries to crawl and map
@@ -110,7 +104,6 @@ class CSVBase(LomBase):
     def getLOMEducational(self, response):
         educational = LomBase.getLOMEducational(self, response)
         tar = LomAgeRangeItemLoader()
-        response.meta["row"][CSVBase.COLUMN_TYPICAL_AGE_RANGE_TO]["text"]
         tar.add_value(
             "fromRange",
             response.meta["row"][CSVBase.COLUMN_TYPICAL_AGE_RANGE_FROM]["text"],

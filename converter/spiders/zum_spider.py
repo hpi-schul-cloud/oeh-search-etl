@@ -1,131 +1,71 @@
-from scrapy.spiders import CrawlSpider
-from converter.items import *
-import time
-from w3lib.html import remove_tags, replace_escape_chars
-from converter.spiders.lom_base import LomBase
-from converter.spiders.json_base import JSONBase
-import json
-import logging
-import requests
-from html.parser import HTMLParser
-from converter.pipelines import ProcessValuespacePipeline
-import re
-from converter.valuespace_helper import ValuespaceHelper
-from converter.constants import *
+from __future__ import annotations
 
-# Spider to fetch RSS from planet schule
-class ZUMSpider(scrapy.Spider, LomBase, JSONBase):
+import scrapy
+import trafilatura
+
+from converter.constants import Constants
+from converter.items import LicenseItem, LomTechnicalItem, ValuespaceItem, LomGeneralItem, LomGeneralItemloader
+from converter.spiders.base_classes import MediaWikiBase
+from converter.web_tools import WebEngine
+
+
+class ZUMSpider(MediaWikiBase, scrapy.Spider):
     name = "zum_spider"
     friendlyName = "ZUM-Unterrichten"
     url = "https://unterrichten.zum.de/"
-    version = "0.1.0"
-    apiUrl = "https://unterrichten.zum.de/api.php?action=query&format=json&list=allpages&apcontinue=%continue&aplimit=100"
-    apiEntryUrl = (
-        "https://unterrichten.zum.de/api.php?action=parse&format=json&pageid=%pageid"
-    )
-    entryUrl = "https://unterrichten.zum.de/wiki/%page"
-    keywords = {}
+    version = "0.1.5"  # last update: 2023-08-29
+    license = Constants.LICENSE_CC_BY_SA_40
+    custom_settings = {"WEB_TOOLS": WebEngine.Playwright, "AUTOTHROTTLE_ENABLED": True, "AUTOTHROTTLE_DEBUG": True}
 
     def __init__(self, **kwargs):
-        LomBase.__init__(self, **kwargs)
+        MediaWikiBase.__init__(self, **kwargs)
 
-    def mapResponse(self, response):
-        r = LomBase.mapResponse(self, response, fetchData=False)
-        r.replace_value("url", response.meta["item"].get("link"))
-        return r
+    def getLOMGeneral(self, response=None) -> LomGeneralItemloader:
+        general_loader: LomGeneralItemloader = super().getLOMGeneral(response)
+        description_collected: list[str] = general_loader.get_collected_values("description")
+        if not description_collected:
+            # there are several ZUM Unterrichten items which have no description and would be dropped otherwise
+            urls_collected: list[str] = self.getLOMTechnical(response=response).get_collected_values("location")
+            if urls_collected and type(urls_collected) is list:
+                # making sure that we actually fetch the main urL, then extract the fulltext with trafilatura
+                item_url: str = urls_collected[0]
+                downloaded: str = trafilatura.fetch_url(item_url)
+                trafilatura_text: str = trafilatura.extract(downloaded)
+                if trafilatura_text:
+                    general_loader.replace_value("description", trafilatura_text)
+        return general_loader
 
-    def getId(self, response):
-        return self.get("parse.pageid", json=response.meta["item"])
+    # ToDo: The methods below are (most probably) code-artifacts from (unfinished) Scrapy contracts, and aren't
+    #  executed during a normal crawl runtime:
+    #  - technical_item
+    #  - license_item
+    #  - general_item
+    #  - valuespace_item
 
-    def getHash(self, response):
-        return str(self.get("parse.revid", json=response.meta["item"])) + self.version
+    def technical_item(self, response=None) -> LomTechnicalItem:
+        """
+        @url https://unterrichten.zum.de/api.php?format=json&action=parse&pageid=19445&prop=text|langlinks|categories|links|templates|images|externallinks|sections|revid|displaytitle|iwlinks|properties|parsewarnings
+        @scrapes format location
+        """
+        return self.getLOMTechnical(response).load_item()
 
-    def startRequest(self, continueToken=""):
-        return scrapy.Request(
-            url=self.apiUrl.replace("%continue", continueToken),
-            callback=self.parseRequest,
-            headers={"Accept": "application/json", "Content-Type": "application/json"},
-            meta={"continueToken": continueToken},
-        )
+    def license_item(self, response) -> LicenseItem:
+        """
+        @url https://unterrichten.zum.de/api.php?format=json&action=parse&pageid=19445&prop=text|langlinks|categories|links|templates|images|externallinks|sections|revid|displaytitle|iwlinks|properties|parsewarnings
+        @scrapes url
+        """
+        return self.getLicense(response).load_item()
 
-    def start_requests(self):
-        keywords = json.loads(
-            requests.get(
-                "https://wirlernenonline.de/wp-json/wp/v2/tags/?per_page=100"
-            ).content.decode("UTF-8")
-        )
-        for keyword in keywords:
-            self.keywords[keyword["id"]] = keyword["name"]
+    def general_item(self, response=None) -> LomGeneralItem:
+        """
+        @url https://unterrichten.zum.de/api.php?format=json&action=parse&pageid=19445&prop=text|langlinks|categories|links|templates|images|externallinks|sections|revid|displaytitle|iwlinks|properties|parsewarnings
+        @scrapes title keyword description
+        """
+        return self.getLOMGeneral(response).load_item()
 
-        yield self.startRequest("")
-
-    def parseRequest(self, response):
-        results = json.loads(response.body_as_unicode())
-        if results:
-            for item in results["query"]["allpages"]:
-                yield scrapy.Request(
-                    url=self.apiEntryUrl.replace("%pageid", str(item["pageid"])),
-                    callback=self.handleEntry,
-                )
-            if "continue" in results:
-                yield self.startRequest(results["continue"]["apcontinue"])
-
-    def handleEntry(self, response):
-        response.meta["item"] = json.loads(response.body_as_unicode())
-        return LomBase.parse(self, response)
-
-    def getBase(self, response):
-        base = LomBase.getBase(self, response)
-        fulltext = self.get("parse.text.*", json=response.meta["item"])
-        base.replace_value("fulltext", self.html2Text(fulltext))  # crashes!
-        return base
-
-    def getLOMGeneral(self, response):
-        general = LomBase.getLOMGeneral(self, response)
-        general.replace_value(
-            "title", self.get("parse.title", json=response.meta["item"])
-        )
-        keywords = self.get("parse.links", json=response.meta["item"])
-        if keywords:
-            keywords = list(map(lambda x: x["*"], keywords))
-            general.add_value("keyword", keywords)
-        props = self.get("parse.properties")
-        if props:
-            description = list(
-                map(
-                    lambda x: x["*"],
-                    filter(lambda x: x["name"] == "description", props),
-                )
-            )
-            general.add_value("description", description)
-        return general
-
-    def getLOMTechnical(self, response):
-        technical = LomBase.getLOMTechnical(self, response)
-        technical.replace_value("format", "text/html")
-        technical.replace_value(
-            "location",
-            self.entryUrl.replace(
-                "%page", self.get("parse.title", json=response.meta["item"])
-            ),
-        )
-        return technical
-
-    def getLicense(self, response):
-        license = LomBase.getLicense(self, response)
-        license.add_value("url", Constants.LICENSE_CC_BY_SA_40)
-        return license
-
-    def getValuespaces(self, response):
-        valuespaces = LomBase.getValuespaces(self, response)
-        categories = list(
-            map(
-                lambda x: x["*"],
-                self.get("parse.categories", json=response.meta["item"]),
-            )
-        )
-        if categories:
-            valuespaces.add_value("discipline", categories)
-            valuespaces.add_value("educationalContext", categories)
-            valuespaces.add_value("intendedEndUserRole", categories)
-        return valuespaces
+    def valuespace_item(self, response) -> ValuespaceItem:
+        """
+        @url https://unterrichten.zum.de/api.php?format=json&action=parse&pageid=19445&prop=text|langlinks|categories|links|templates|images|externallinks|sections|revid|displaytitle|iwlinks|properties|parsewarnings
+        @scrapes discipline educationalContext intendedEndUserRole
+        """
+        return self.getValuespaces(response).load_item()

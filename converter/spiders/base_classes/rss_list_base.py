@@ -1,14 +1,13 @@
-from scrapy.spiders import CrawlSpider
-from converter.items import *
-import time
-import logging
-from w3lib.html import remove_tags, replace_escape_chars
-from converter.spiders.lom_base import LomBase
-from converter.spiders.rss_base import RSSBase
-from converter.spiders.csv_base import CSVBase
-from converter.valuespace_helper import ValuespaceHelper
 import csv
 import os
+
+import scrapy
+
+from converter.valuespace_helper import ValuespaceHelper
+from .csv_base import CSVBase
+from .lom_base import LomBase
+from .rss_base import RSSBase
+
 
 # rss crawler with a list of entries to crawl and map
 # for supported columns, please check the CSVbase class
@@ -68,7 +67,7 @@ class RSSListBase(RSSBase, LomBase):
         return general
 
     def getLicense(self, response):
-        license = LomBase.getLicense(self, response)
+        license = RSSBase.getLicense(self, response)
         license.add_value(
             "internal", self.getCSVValue(response, CSVBase.COLUMN_LICENSE)
         )

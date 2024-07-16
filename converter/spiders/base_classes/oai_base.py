@@ -1,7 +1,8 @@
 from converter.items import *
-from converter.spiders.lom_base import LomBase
+from .lom_base import LomBase
 import logging
 import vobject
+import scrapy
 
 
 class OAIBase(scrapy.Spider, LomBase):
@@ -76,8 +77,8 @@ class OAIBase(scrapy.Spider, LomBase):
             )
             yield scrapy.Request(url=nextUrl, callback=self.parse)
 
-    def parseRecord(self, response):
-        lom = LomBase.parse(self, response)
+    async def parseRecord(self, response):
+        lom = await LomBase.parse(self, response)
         return lom
 
     def getBase(self, response):
