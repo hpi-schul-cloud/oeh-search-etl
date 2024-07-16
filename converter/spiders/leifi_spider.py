@@ -1,19 +1,34 @@
-from converter.items import *
-import time
-from w3lib.html import remove_tags, replace_escape_chars
-from converter.spiders.lom_base import LomBase
-from converter.valuespace_helper import Valuespaces
-import requests
-from html.parser import HTMLParser
-from converter.constants import Constants
+import html
+import os
+import pathlib
 
-# LEIFIphysik spider for xml data file
+import requests
+import scrapy
+
+from converter.constants import Constants
+from converter.items import *
+from converter.valuespace_helper import Valuespaces
+from .base_classes import LomBase
+
+
 class LeifiSpider(scrapy.Spider, LomBase):
+    """
+    LeifiSpider uses a local .xml file (which contains the RSS feed of leifiphysik.de) to crawl its elements.
+
+    This crawler can only be run or locally debugged if you have the "leifi_feed_rss.xml" file
+    in the correct directory, either locally or on your HTTP-Server in "/sources/leifi_feed_rss.xml".
+    """
     name = "leifi_spider"
     friendlyName = "LEIFIphysik"
     url = "https://www.leifiphysik.de/"
-    #rssUrl = "http://localhost/sources/leifi_feed_rss.xml"
-    rssUrl = "https://www.leifiphysik.de/sites/default/files/elixier/leifi_feed_rss.xml"
+    version = "0.1.1"   # last update: 2022-03-04
+    # ToDo: enable the localhost rssUrl
+    # rssUrl = "http://localhost/sources/leifi_feed_rss.xml"
+
+    # For local testing/debugging ONLY:
+    # first create a folder in this project root folder called 'sources' and add the 'leifi_feed_rss.xml'
+    # ToDo: don't forget to enable the localhost rssUrl before commiting your changes!
+    rssUrl = pathlib.Path(os.path.abspath('sources/leifi_feed_rss.xml')).as_uri()
 
     def __init__(self, **kwargs):
         LomBase.__init__(self, **kwargs)
@@ -23,20 +38,20 @@ class LeifiSpider(scrapy.Spider, LomBase):
         return response.meta["item"].xpath("url_datensatz//text()").get()
 
     def start_requests(self):
-        yield scrapy.Request(url=self.rssUrl, callback=self.parseList)
+        yield scrapy.Request(url=self.rssUrl, callback=self.parse_xml)
 
-    def parseList(self, response):
+    def parse_xml(self, response):
         ids = []
         for item in response.xpath("//elixier/datensatz"):
-            id = item.xpath("id_local//text()").get()
-            if not id in ids:
-                ids.append(id)
-                copyResponse = response.copy()
-                copyResponse.meta["item"] = item
-                yield self.parse(copyResponse)
+            item_id = item.xpath("id_local//text()").get()
+            if item_id not in ids:
+                ids.append(item_id)
+                copy_response = response.copy()
+                copy_response.meta["item"] = item
+                yield self.parse(copy_response)
 
-    def parse(self, response):
-        return LomBase.parse(self, response)
+    async def parse(self, response):
+        return await LomBase.parse(self, response)
 
     def getValuespaces(self, response):
         valuespaces = LomBase.getValuespaces(self, response)
@@ -75,22 +90,20 @@ class LeifiSpider(scrapy.Spider, LomBase):
         general = LomBase.getLOMGeneral(self, response)
         general.add_value(
             "title",
-            HTMLParser().unescape(response.meta["item"].xpath("titel//text()").get()),
+            html.unescape(response.meta["item"].xpath("titel//text()").get()),
         )
         general.add_value(
             "language", response.meta["item"].xpath("sprache//text()").get()
         )
         general.add_value(
             "keyword",
-            HTMLParser()
-            .unescape(response.meta["item"].xpath("schlagwort//text()").get())
-            .split("; "),
+            html.unescape(response.meta["item"].xpath("schlagwort//text()").get()).split("; "),
         )
         desc = response.meta["item"].xpath("beschreibung//text()").get().strip()
         # dirty cleaning of invalid descriptions
         # not perfect yet, these objects also appear inside the content
         if not desc.startswith("swiffyobject_"):
-            general.add_value("description", HTMLParser().unescape(desc))
+            general.add_value("description", html.unescape(desc))
         return general
 
     def getLOMTechnical(self, response):
@@ -102,10 +115,10 @@ class LeifiSpider(scrapy.Spider, LomBase):
         return technical
 
     def getLicense(self, response):
-        license = LomBase.getLicense(self, response)
+        license_loader = LomBase.getLicense(self, response)
         if (
-            response.meta["item"].xpath("rechte//text()").get()
-            == "Keine Angabe, es gilt die gesetzliche Regelung"
+                response.meta["item"].xpath("rechte//text()").get()
+                == "Keine Angabe, es gilt die gesetzliche Regelung"
         ):
-            license.add_value("internal", Constants.LICENSE_COPYRIGHT_LAW)
-        return license
+            license_loader.add_value("internal", Constants.LICENSE_COPYRIGHT_LAW)
+        return license_loader

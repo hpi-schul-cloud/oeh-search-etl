@@ -1,26 +1,24 @@
 import csv
 import hashlib
-import re
 from abc import ABCMeta, abstractmethod
 from io import StringIO
 from typing import List
 
 import converter.items as items
-from converter.spiders.lom_base import LomBase
+from .lom_base import LomBase
 from overrides import overrides
 from scrapy.http import Request, Response
 from scrapy.http.response.text import TextResponse
-from scrapy.spiders import Spider
-from typing import Callable
 
 
-class LernprogrammeSpiderBase(Spider, metaclass=ABCMeta):
+class LernprogrammeSpiderBase(metaclass=ABCMeta):
     version = "0.1.0"
 
+    @classmethod
     @property
     @abstractmethod
-    def name(self):
-        pass
+    def name(cls) -> str:
+        return ""
 
     @property
     @abstractmethod
@@ -67,7 +65,7 @@ class LernprogrammeSpiderBase(Spider, metaclass=ABCMeta):
             else None
         )
 
-    def parse(self, response):
+    async def parse(self, response):
         reader = csv.DictReader(
             StringIO(response.text),  # DictReader expects a file handle
             ["title", "description", "keywords", "thumbnail", "url", "width", "height"],
@@ -78,7 +76,7 @@ class LernprogrammeSpiderBase(Spider, metaclass=ABCMeta):
             row = self.map_row(row)
             response_copy = response.replace(url=row["url"])
             response_copy.meta["row"] = row
-            yield self.loader.parse(response_copy)
+            yield await self.loader.parse(response_copy)
             if self.exercise_loader is not None:
                 yield self.request_exercise(row)
 
@@ -132,7 +130,6 @@ class LernprogrammeLomLoader(LomBase):
     @overrides  # LomBase
     def getBase(self, response: Response) -> items.BaseItemLoader:
         base = LomBase.getBase(self, response)
-        base.replace_value("type", self.static_values["type"])
         if response.meta["row"]["thumbnail"] is not None:
             base.add_value("thumbnail", response.meta["row"]["thumbnail"])
         return base
@@ -174,6 +171,7 @@ class LernprogrammeLomLoader(LomBase):
     def getValuespaces(self, response: Response) -> items.ValuespaceItemLoader:
         valuespaces = LomBase.getValuespaces(self, response)
         skos = self.static_values["skos"]
+        valuespaces.replace_value("new_lrt", skos["new_lrt"])
         valuespaces.add_value(
             "learningResourceType",
             skos["learningResourceType"],
