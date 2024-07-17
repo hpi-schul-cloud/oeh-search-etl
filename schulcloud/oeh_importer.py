@@ -125,7 +125,7 @@ class OehImporter(LomBase):
                 self.log.error(traceback.format_exc())
             break
 
-    def send_to_pipeline(self, item: scrapy.Item):
+    async def send_to_pipeline(self, item: scrapy.Item):
         for pipeline in self.pipeline:
             # spider has to be an object with a "name" attribute
             item = pipeline.process_item(item, self)
