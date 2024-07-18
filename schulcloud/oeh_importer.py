@@ -107,7 +107,7 @@ class OehImporter(LomBase):
             try:
                 if self.hasChanged(response_copy):
                     item = await LomBase.parse(self, response_copy)
-                    await self.send_to_pipeline(item)
+                    self.send_to_pipeline(item)
             except ApiException as exc:
                 # sometimes edusharing will return 401 "admin rights required" for all bulk.find requests
                 if exc.status in (401, 503, 504):
