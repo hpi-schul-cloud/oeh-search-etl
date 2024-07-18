@@ -226,6 +226,7 @@ class LomBaseItem(Item):
     lifecycle = Field(serializer=LomLifecycleItem, output_processor=JoinMultivalues())
     # rights = Field(serializer=LomRightsItem)
     technical = Field(serializer=LomTechnicalItem)
+    relation = Field(serializer=LomRelationItem, output_processor=JoinMultivalues())
 
 
 class ResponseItem(Item):
