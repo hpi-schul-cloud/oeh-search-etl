@@ -1,4 +1,5 @@
 
+import asyncio
 import sys
 import datetime as dt
 import time
@@ -126,9 +127,9 @@ class Job:
             if not self.schedule_rules:
                 raise ValueError('No schedule')
 
-    def run_schedule(self):
+    async def run_schedule(self):
         if not self.schedule_rules:
-            self.run()
+            await self.run()
             return
         while True:
             now = dt.datetime.now()
@@ -146,14 +147,14 @@ class Job:
                     time.sleep(min(time_remaining.total_seconds(), check_interval_seconds))
                     continue
 
-                self.run()
+                await self.run()
                 break
 
-    def run(self):
-        self.function()
+    async def run(self):
+        await self.function()
 
 
-def main():
+async def main():
     env = Environment(env_vars=needed_env_vars)
     schedule = env['SCHEDULE'].split(';')
     crawler = env['CRAWLER'].lower()
@@ -178,9 +179,9 @@ def main():
         print(f'Unexpected execution target "{crawler}"', file=sys.stderr)
         return 1
 
-    job.run_schedule()
+    await job.run_schedule()
     return 0
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    asyncio.run(main())

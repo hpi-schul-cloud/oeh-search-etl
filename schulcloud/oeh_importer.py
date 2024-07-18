@@ -1,6 +1,5 @@
+import asyncio
 import datetime
-import json
-import os
 import sys
 import logging
 import time
@@ -54,7 +53,7 @@ class OehImporter(LomBase):
         self.fake_request = scrapy.http.Request(self.API_URL)
         self.fake_response = scrapy.http.Response(self.API_URL, request=self.fake_request)
 
-    def run(self):
+    async def run(self):
         i = 0
         while True:
             nodes = self.request(i, 100)
@@ -65,7 +64,7 @@ class OehImporter(LomBase):
                 if ending in ('mp4', 'h5p'):
                     self.log.info('skipped')
                     continue
-                self.process_node(node)
+                await self.process_node(node)
             i += len(nodes)
             if i >= self.total:
                 break
@@ -101,14 +100,14 @@ class OehImporter(LomBase):
             print(response.text)
             raise RuntimeError(f'Unexpected response: {response.status_code} {response.text}')
 
-    def process_node(self, node: dict):
+    async def process_node(self, node: dict):
         response_copy = self.fake_response.replace(url=node['content']['url'])
         self.fake_response.meta['item'] = node
         while True:
             try:
                 if self.hasChanged(response_copy):
-                    item = super(OehImporter, self).parse(response_copy)
-                    self.send_to_pipeline(item)
+                    item = await LomBase.parse(self, response_copy)
+                    await self.send_to_pipeline(item)
             except ApiException as exc:
                 # sometimes edusharing will return 401 "admin rights required" for all bulk.find requests
                 if exc.status in (401, 503, 504):
@@ -125,7 +124,7 @@ class OehImporter(LomBase):
                 self.log.error(traceback.format_exc())
             break
 
-    async def send_to_pipeline(self, item: scrapy.Item):
+    def send_to_pipeline(self, item: scrapy.Item):
         for pipeline in self.pipeline:
             # spider has to be an object with a "name" attribute
             item = pipeline.process_item(item, self)
@@ -174,8 +173,8 @@ class OehImporter(LomBase):
         return base
 
     # fulltext is handled in base, response is not necessary
-    def mapResponse(self, response, fetchData=True):
-        return LomBase.mapResponse(self, response, False)
+    async def mapResponse(self, response, fetchData=True):
+        return await LomBase.mapResponse(self, response, False)
 
     def getId(self, response=None) -> str:
         return response.meta["item"]["ref"]["id"]
@@ -280,5 +279,8 @@ class OehImporter(LomBase):
         return "ccm:collection_io_reference" not in response.meta["item"]["aspects"]
 
 
+async def main():
+    await OehImporter().run()
+
 if __name__ == '__main__':
-    OehImporter().run()
+    asyncio.run(main())
