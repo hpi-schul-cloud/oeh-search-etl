@@ -107,7 +107,7 @@ class OehImporter(LomBase):
             try:
                 if self.hasChanged(response_copy):
                     item = await LomBase.parse(self, response_copy)
-                    self.send_to_pipeline(item)
+                    await self.send_to_pipeline(item)
             except ApiException as exc:
                 # sometimes edusharing will return 401 "admin rights required" for all bulk.find requests
                 if exc.status in (401, 503, 504):
@@ -124,10 +124,13 @@ class OehImporter(LomBase):
                 self.log.error(traceback.format_exc())
             break
 
-    def send_to_pipeline(self, item: scrapy.Item):
+    async def send_to_pipeline(self, item: scrapy.Item):
         for pipeline in self.pipeline:
             # spider has to be an object with a "name" attribute
-            item = pipeline.process_item(item, self)
+            if asyncio.iscoroutinefunction(pipeline.process_item):
+                item = await pipeline.process_item(item, self)
+            else:
+                item = pipeline.process_item(item, self)
 
     def getProperty(self, name, response):
         return (
