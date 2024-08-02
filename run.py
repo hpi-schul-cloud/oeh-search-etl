@@ -13,6 +13,8 @@ from schulcloud.fwu.upload_fwu import Uploader as FWU_Uploader
 from schulcloud.permission_updater import PermissionUpdater
 from schulcloud.oeh_importer import OehImporter
 
+import nest_asyncio
+nest_asyncio.apply()
 
 needed_env_vars = [
     'CRAWLER',

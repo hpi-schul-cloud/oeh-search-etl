@@ -7,23 +7,27 @@ import traceback
 
 import requests
 import scrapy as scrapy
-import vobject
+from scrapy.crawler import Crawler
 from scrapy.exceptions import DropItem
+from scrapy.spiders import Spider
+from scrapy.utils.project import get_project_settings
+import vobject
 
 from edu_sharing_client.rest import ApiException
 
 from converter.items import LomAnnotationItemLoader
-from converter.spiders.base_classes.lom_base import LomAgeRangeItemLoader
-from converter.spiders.base_classes import LomBase
+from converter.spiders.base_classes.lom_base import LomBase, LomAgeRangeItemLoader
 from converter.es_connector import EduSharingConstants
 from converter.pipelines import  EduSharingCheckPipeline, FilterSparsePipeline, LOMFillupPipeline, NormLicensePipeline,\
     ConvertTimePipeline, ProcessValuespacePipeline, ProcessThumbnailPipeline, EduSharingStorePipeline, BasicPipeline
 
 from schulcloud.edusharing import EdusharingAPI, RequestTimeoutException
 
+import nest_asyncio
+nest_asyncio.apply()
 
-class OehImporter(LomBase):
-    name = "oeh_spider"
+class OehImporter(LomBase, Spider):
+    name = "oeh_importer"
     friendlyName = "Open Edu Hub"
     API_URL = 'https://redaktion.openeduhub.net/edu-sharing/'
     MDS_ID = 'mds_oeh'
@@ -52,6 +56,15 @@ class OehImporter(LomBase):
 
         self.fake_request = scrapy.http.Request(self.API_URL)
         self.fake_response = scrapy.http.Response(self.API_URL, request=self.fake_request)
+
+        self.crawler = Crawler(OehImporter)
+        self.crawler._apply_settings()
+        self.crawler.engine = self.crawler._create_engine()
+        start_requests = iter(self.start_requests())
+        self.crawler.engine.open_spider(self, start_requests)
+        self.crawler.engine.start()
+
+        asyncio.run(self.run())
 
     async def run(self):
         i = 0
