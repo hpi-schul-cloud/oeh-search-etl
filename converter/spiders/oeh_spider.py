@@ -2,7 +2,7 @@ import logging
 
 import converter.env as env
 from .base_classes import EduSharingBase
-from ..items import LomLifecycleItemloader
+from ..items import LomLifecycleItemloader, LomAnnotationItemLoader
 
 
 class OEHSpider(EduSharingBase):
@@ -45,7 +45,7 @@ class OEHSpider(EduSharingBase):
         return general
 
     def getLOMAnnotation(self, response=None) -> LomAnnotationItemLoader:
-        annotation = LomBase.getLOMAnnotation(self, response)
+        annotation = EduSharingBase.getLOMAnnotation(self, response)
 
         # Adding a default searchable value to constitute this element (node) as a valid-to-be-returned object.
         annotation.add_value("entity", "crawler")
@@ -110,7 +110,7 @@ class OEHSpider(EduSharingBase):
         return True
 
     def getPermissions(self, response):
-        permissions = LomBase.getPermissions(self, response)
+        permissions = EduSharingBase.getPermissions(self, response)
 
         permissions.replace_value("public", False)
         permissions.add_value("autoCreateGroups", True)

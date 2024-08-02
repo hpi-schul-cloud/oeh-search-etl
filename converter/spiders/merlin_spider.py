@@ -1,6 +1,7 @@
 import xmltodict as xmltodict
 from lxml import etree
 from scrapy.spiders import CrawlSpider
+import scrapy as scrapy
 
 from converter.constants import Constants
 from converter.items import *
@@ -81,6 +82,9 @@ class MerlinSpider(CrawlSpider, LomBase):
                     # In case JSON string representation is preferred:
                     # copyResponse._set_body(json.dumps(copyResponse.meta['item'], indent=1, ensure_ascii=False))
                     copyResponse._set_body(element_xml_str)
+                
+                except Exception:
+                    pass
 
                 # LomBase.parse() has to be called for every individual instance that needs to be saved to the database.
                 await LomBase.parse(self, copyResponse)
