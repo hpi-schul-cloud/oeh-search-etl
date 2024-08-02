@@ -4,10 +4,10 @@ import os
 from tqdm import tqdm
 
 from converter.es_connector import EduSharing
-from schulcloud.upload_sportinhalt_brandenburg.convert_to_collection import \
+from schulcloud.brb_sportinhalte.convert_to_collection import \
     identify_collections_in_directory, get_directory_elements, convert_to_collection
 
-from schulcloud.upload_sportinhalt_brandenburg.sportinhalt_utils import get_configuration, get_api
+from schulcloud.brb_sportinhalte.sportinhalt_utils import get_configuration, get_api
 
 
 def add_attributes_to_nodes(node):

@@ -1,6 +1,6 @@
 from tqdm import tqdm
 
-from schulcloud.upload_sportinhalt_brandenburg.sportinhalt_utils import get_api
+from schulcloud.brb_sportinhalte.sportinhalt_utils import get_api
 
 
 def identify_collections_in_directory(directory_node_id: str):
