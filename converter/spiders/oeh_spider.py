@@ -2,7 +2,7 @@ import logging
 
 import converter.env as env
 from .base_classes import EduSharingBase
-from ..items import LomLifecycleItemloader, LomAnnotationItemLoader
+from ..items import LomLifecycleItemloader
 
 
 class OEHSpider(EduSharingBase):
@@ -37,21 +37,6 @@ class OEHSpider(EduSharingBase):
             technical.replace_value("location", response.meta["item"]["properties"]["ccm:wwwurl"][0])
         return technical
 
-    def getLOMGeneral(self, response):
-        general = EduSharingBase.getLOMGeneral(self, response)
-
-        # Adding a default aggregationLevel, which can be used during filtering queries.
-        general.replace_value("aggregationLevel", "1")
-        return general
-
-    def getLOMAnnotation(self, response=None) -> LomAnnotationItemLoader:
-        annotation = EduSharingBase.getLOMAnnotation(self, response)
-
-        # Adding a default searchable value to constitute this element (node) as a valid-to-be-returned object.
-        annotation.add_value("entity", "crawler")
-        annotation.add_value("description", "searchable==1")
-
-        return annotation
 
     def getLOMLifecycle(self, response):
         has_publisher = False
@@ -108,12 +93,3 @@ class OEHSpider(EduSharingBase):
             )
             return False
         return True
-
-    def getPermissions(self, response):
-        permissions = EduSharingBase.getPermissions(self, response)
-
-        permissions.replace_value("public", False)
-        permissions.add_value("autoCreateGroups", True)
-        permissions.add_value("groups", ["public"])
-
-        return permissions

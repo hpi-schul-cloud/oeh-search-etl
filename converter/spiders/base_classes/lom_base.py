@@ -94,12 +94,6 @@ class LomBase:
         if self.getId(response) is not None and self.getHash(response) is not None:
             if not self.hasChanged(response):
                 return None
-
-        # Avoid stressing the servers across calls of this method.
-        settings = get_project_settings()
-        if "PARSE_DELAY" in settings and float(settings.get('PARSE_DELAY')) > 0:
-          time.sleep(float(settings.get("PARSE_DELAY")))
-
         main = self.getBase(response)
         main.add_value("lom", self.getLOM(response).load_item())
         main.add_value("valuespaces", self.getValuespaces(response).load_item())
@@ -159,7 +153,6 @@ class LomBase:
         lom.add_value("technical", self.getLOMTechnical(response).load_item())
         lom.add_value("educational", self.getLOMEducational(response).load_item())
         lom.add_value("classification", self.getLOMClassification(response).load_item())
-        lom.add_value("relation", self.getLOMRelation(response).load_item())
         return lom
 
     def getBase(self, response=None) -> BaseItemLoader:
@@ -189,9 +182,6 @@ class LomBase:
 
     def getLOMClassification(self, response=None) -> LomClassificationItemLoader:
         return LomClassificationItemLoader(response=response)
-
-    def getLOMRelation(self, response=None) -> LomRelationItemLoader:
-        return LomRelationItemLoader(response=response)
 
     def getPermissions(self, response=None) -> PermissionItemLoader:
         permissions = PermissionItemLoader(response=response)

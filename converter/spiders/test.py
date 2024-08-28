@@ -1,35 +1,26 @@
-import asyncio
 import datetime
-import sys
+import json
 import logging
-import time
-import traceback
-
 import requests
-import scrapy as scrapy
-from scrapy.crawler import Crawler
-from scrapy.exceptions import DropItem
-from scrapy.spiders import Spider
-from scrapy.utils.project import get_project_settings
+import scrapy
+import sys
 import vobject
 
-from edu_sharing_client.rest import ApiException
-
-from converter.spiders.base_classes.lom_base import LomBase, LomAgeRangeItemLoader
+from converter.constants import Constants
 from converter.es_connector import EduSharingConstants
-from converter.pipelines import  EduSharingCheckPipeline, FilterSparsePipeline, LOMFillupPipeline, NormLicensePipeline,\
-    ConvertTimePipeline, ProcessValuespacePipeline, ProcessThumbnailPipeline, EduSharingStorePipeline, BasicPipeline
+from converter.items import LomAgeRangeItemLoader
+from converter.spiders.base_classes.lom_base import LomBase
 
-from schulcloud.edusharing import EdusharingAPI, RequestTimeoutException
+class TestSpider(LomBase, scrapy.Spider):
+    name = "test_spider"
+    allowed_domains = ["redaktion.openeduhub.net"]
 
-import nest_asyncio
-nest_asyncio.apply()
-
-class OehImporter(LomBase, Spider):
-    name = "oeh_importer"
-    friendlyName = "Open Edu Hub"
     API_URL = 'https://redaktion.openeduhub.net/edu-sharing/'
     MDS_ID = 'mds_oeh'
+
+    total = -1
+    offset = 0
+    count = 100
 
     def __init__(self, **kwargs):
         LomBase.__init__(self, **kwargs)
@@ -38,111 +29,52 @@ class OehImporter(LomBase, Spider):
         self.log.setLevel(logging.DEBUG)
         self.log.addHandler(logging.FileHandler('oeh2_output.txt'))
 
-        self.pipeline: list[BasicPipeline] = [
-            EduSharingCheckPipeline(),
-            FilterSparsePipeline(),
-            LOMFillupPipeline(),
-            NormLicensePipeline(),
-            ConvertTimePipeline(),
-            ProcessValuespacePipeline(),
-            ProcessThumbnailPipeline(),
-            EduSharingStorePipeline()
-        ]
-
-        self.api = EdusharingAPI(self.API_URL)
-
-        self.total = -1
-
         self.fake_request = scrapy.http.Request(self.API_URL)
         self.fake_response = scrapy.http.Response(self.API_URL, request=self.fake_request)
 
-        self.crawler = Crawler(OehImporter)
-        self.crawler._apply_settings()
-        self.crawler.engine = self.crawler._create_engine()
-        start_requests = iter(self.start_requests())
-        self.crawler.engine.open_spider(self, start_requests)
-        self.crawler.engine.start()
-
-        asyncio.run(self.run())
-
-    async def run(self):
-        i = 0
-        while True:
-            nodes = self.request(i, 100)
-            for j in range(len(nodes)):
-                node = nodes[j]
-                self.log.debug(f'{datetime.datetime.now()} {i+j} / {self.total} :: {node["ccm:replicationsource"] if "ccm:replicationsource" in node else ""} :: {node["name"]}')
-                ending = node['name'].rsplit('.', 1)[-1]
-                if ending in ('mp4', 'h5p'):
-                    self.log.info('skipped')
-                    continue
-                await self.process_node(node)
-            i += len(nodes)
-            if i >= self.total:
-                break
-
-    def request(self, offset: int, count: int):
-        search_url = f'/search/v1/queries/-home-/{self.MDS_ID}/ngsearch'
-        params = {
-            'contentType': 'FILES',
-            'maxItems': str(count),
-            'skipCount': str(offset),
-            'sortProperties': 'cm%3Acreated',  # 'cm:created'
-            'sortAscending': 'true',
-            'propertyFilter': '-all-'
+    def start_requests(self):
+        url = f'https://redaktion.openeduhub.net/edu-sharing/rest/search/v1/queries/-home-/{self.MDS_ID}/ngsearch?contentType=FILES&maxItems={self.count}&skipCount={self.offset}&sortProperties=cm%3Acreated&sortAscending=true&propertyFilter=-all-'
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
         body = {
             'criteria': []
         }
+        yield scrapy.Request(url=url, body=json.dumps(body), headers=headers, method='POST', callback=self.parse)
+    
+    async def parse(self, response):
+        data = json.loads(response.body)
 
-        try:
-            response = self.api.make_request('POST', search_url, params=params, json_data=body, timeout=30)
-        except RequestTimeoutException:
-            print('~~~ <-', params)
-            raise RuntimeError('Timeout')
+        if self.total == -1:
+            self.total = data['pagination']['total']
+        
+        nodes = data['nodes']
+        for j in range(len(nodes)):
+            node = nodes[j]
+            self.log.debug(f'{datetime.datetime.now()} {self.offset+j} / {self.total} :: {node["ccm:replicationsource"] if "ccm:replicationsource" in node else ""} :: {node["name"]}')
+            ending = node['name'].rsplit('.', 1)[-1]
+            if ending in ('mp4', 'h5p'):
+                self.log.info('skipped')
+                continue
+            
+            response_copy = self.fake_response.replace(url=node['content']['url'])
+            self.fake_response.meta['item'] = node
 
-        print(response.status_code, '<-', params, '->', response.headers['Content-Type'])
+            item = await LomBase.parse(self, response_copy)
+            yield item
 
-        if response.status_code == 200 and response.headers['Content-Type'] == 'application/json':
-            data = response.json()
-            if self.total == -1:
-                self.total = data['pagination']['total']
-            return data['nodes']
-        else:
-            print(response.text)
-            raise RuntimeError(f'Unexpected response: {response.status_code} {response.text}')
-
-    async def process_node(self, node: dict):
-        response_copy = self.fake_response.replace(url=node['content']['url'])
-        self.fake_response.meta['item'] = node
-        while True:
-            try:
-                if self.hasChanged(response_copy):
-                    item = await LomBase.parse(self, response_copy)
-                    await self.send_to_pipeline(item)
-            except ApiException as exc:
-                # sometimes edusharing will return 401 "admin rights required" for all bulk.find requests
-                if exc.status in (401, 503, 504):
-                    time.sleep(10)
-                    print('retry')
-                    continue
-                self.log.error(traceback.format_exc())
-            except DropItem as exc:
-                self.log.warning(f'Item dropped: {exc.args[0]}')
-            except KeyboardInterrupt:
-                self.log.info('KeyboardInterrupt')
-                exit(1)
-            except:
-                self.log.error(traceback.format_exc())
-            break
-
-    async def send_to_pipeline(self, item: scrapy.Item):
-        for pipeline in self.pipeline:
-            # spider has to be an object with a "name" attribute
-            if asyncio.iscoroutinefunction(pipeline.process_item):
-                item = await pipeline.process_item(item, self)
-            else:
-                item = pipeline.process_item(item, self)
+        self.offset += len(nodes)
+        if self.offset < self.total:
+            url = f'https://redaktion.openeduhub.net/edu-sharing/rest/search/v1/queries/-home-/{self.MDS_ID}/ngsearch?contentType=FILES&maxItems={self.count}&skipCount={self.offset}&sortProperties=cm%3Acreated&sortAscending=true&propertyFilter=-all-'
+            headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+            body = {
+                'criteria': []
+            }
+            yield scrapy.Request(url=url, body=json.dumps(body), headers=headers, method='POST', callback=self.parse)
 
     def getProperty(self, name, response):
         return (
@@ -283,10 +215,3 @@ class OehImporter(LomBase, Spider):
 
     def shouldImport(self, response=None):
         return "ccm:collection_io_reference" not in response.meta["item"]["aspects"]
-
-
-async def main():
-    await OehImporter().run()
-
-if __name__ == '__main__':
-    asyncio.run(main())

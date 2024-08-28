@@ -193,26 +193,6 @@ class LomClassificationItem(Item):
     taxonPath = Field(output_processor=JoinMultivalues())
     # ToDo: LOM classification 'taxonPath' has no equivalent property in edu-sharing, might be obsolete
 
-class LomRelationResourceItem(Item):
-    identifier = Field(output_processor=JoinMultivalues())
-    catalog = Field()
-    entry = Field()
-    description = Field()
-
-class LomRelationItem(Item):
-    """
-    Following the LOM-DE.doc#7 (Relation) specifications: http://sodis.de/lom-de/LOM-DE.doc .
-    """
-    kind = Field()
-    resource = Field(serializer=LomRelationResourceItem)
-
-class LomAnnotationItem(Item):
-    """
-    Following the LOM-DE.doc#8 (Annotation) specifications: http://sodis.de/lom-de/LOM-DE.doc .
-    """
-    entity = Field()
-    date = Field()
-    description = Field()
 
 class LomBaseItem(Item):
     """
@@ -226,7 +206,6 @@ class LomBaseItem(Item):
     lifecycle = Field(serializer=LomLifecycleItem, output_processor=JoinMultivalues())
     # rights = Field(serializer=LomRightsItem)
     technical = Field(serializer=LomTechnicalItem)
-    relation = Field(serializer=LomRelationItem, output_processor=JoinMultivalues())
 
 
 class ResponseItem(Item):
@@ -338,6 +317,7 @@ class PermissionItem(Item):
     """Mediacenters that should have access to this object"""
     public = Field()
     """Determines if this item should be 'public' (= accessible by anyone)"""
+
 
 class BaseItem(Item):
     """
@@ -475,27 +455,7 @@ class LomClassificationItemLoader(ItemLoader):
     default_item_class = LomClassificationItem
     default_output_processor = TakeFirst()
 
-class LomRelationResourceItemLoader(ItemLoader):
-    default_item_class = LomRelationResourceItem
-    default_output_processor = TakeFirst()
-
-class LomRelationItemLoader(ItemLoader):
-    default_item_class = LomRelationItem
-    default_output_processor = TakeFirst()
-
 
 class PermissionItemLoader(ItemLoader):
     default_item_class = PermissionItem
-    default_output_processor = TakeFirst()
-
-class LomRelationResourceItemLoader(ItemLoader):
-    default_item_class = LomRelationResourceItem
-    default_output_processor = TakeFirst()
-
-class LomRelationItemLoader(ItemLoader):
-    default_item_class = LomRelationItem
-    default_output_processor = TakeFirst()
-
-class LomAnnotationItemLoader(ItemLoader):
-    default_item_class = LomAnnotationItem
     default_output_processor = TakeFirst()

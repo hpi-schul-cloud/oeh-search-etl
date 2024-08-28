@@ -17,7 +17,6 @@ from vobject.vcard import VCardBehavior
 
 from converter import env
 from converter.constants import Constants
-from converter.spiders.utils.spider_name_converter import get_spider_friendly_name
 from edu_sharing_client import ABOUTApi
 from edu_sharing_client.api.bulk_v1_api import BULKV1Api
 from edu_sharing_client.api.iam_v1_api import IAMV1Api
@@ -102,7 +101,7 @@ class EduSharing:
         MediaCenter = 2
 
     cookie: str = None
-    resetVersion: bool = True
+    resetVersion: bool = False
     version: any
     apiClient: ESApiClient
     aboutApi: ABOUTApi
@@ -145,7 +144,6 @@ class EduSharing:
                 group=spider.name,
                 group_by=groupBy,
                 reset_version=EduSharing.resetVersion,
-                _request_timeout=30  # prevents crawlers from hanging
             )
         except ApiException as e:
             # ToDo:
@@ -369,11 +367,8 @@ class EduSharing:
     def transform_item(self, uuid, spider, item):
         spaces = {
             "ccm:replicationsource": spider.name,
-            "ccm:replicationsource_DISPLAYNAME": get_spider_friendly_name(spider.name),
             "ccm:replicationsourceid": item["sourceId"],
             "ccm:replicationsourcehash": item["hash"],
-            "ccm:replicationsourcedisplayname": get_spider_friendly_name(spider.name),
-            "ccm:objecttype": item["type"],
             "ccm:replicationsourceuuid": uuid,
             "cm:name": item["lom"]["general"]["title"],
             "ccm:wwwurl": item["lom"]["technical"]["location"][0] if "location" in item["lom"]["technical"] else None,
@@ -383,12 +378,6 @@ class EduSharing:
             if "aggregationLevel" in item["lom"]["general"]
             else None,
             "cclom:title": item["lom"]["general"]["title"],
-            "cclom:aggregationlevel": str(item["lom"]["general"]["aggregationLevel"]),
-
-            # TODO: HPI LEGACY REMOVE (3 lines)
-            "ccm:replicationsource_DISPLAYNAME": get_spider_friendly_name(spider.name),
-            "ccm:hpi_lom_general_aggregationlevel": str(item["lom"]["general"]["aggregationLevel"]),
-            "ccm:hpi_searchable": str(item["searchable"]),
         }
         if "identifier" in item["lom"]["general"]:
             spaces["cclom:general_identifier"] = item["lom"]["general"]["identifier"]
@@ -397,10 +386,7 @@ class EduSharing:
         if "status" in item:
             spaces["ccm:editorial_state"] = item["status"]
         if "origin" in item:
-            spaces["ccm:replicationsourceorigin"] = item["origin"] # TODO currently not mapped in edu-sharing
-            spaces["ccm:replicationsourceorigindisplayname"] = get_spider_friendly_name(item["origin"])
-            # TODO: HPI LEGACY REMOVE (1 line)
-            spaces["ccm:replicationsourceorigin_DISPLAYNAME"] = get_spider_friendly_name(item["origin"])
+            spaces["ccm:replicationsourceorigin"] = item["origin"]  # TODO currently not mapped in edu-sharing
 
         if hasattr(spider, "edu_sharing_source_template_whitelist"):
             # check if there were whitelisted metadata properties in the edu-sharing source template
@@ -566,23 +552,6 @@ class EduSharing:
                 spaces[key] = list([x for y in spaces[key] for x in y])
             if not type(spaces[key]) is list:
                 spaces[key] = [spaces[key]]
-
-        # Relation information, according to the LOM-DE.doc#7 specifications: http://sodis.de/lom-de/LOM-DE.doc
-        if "relation" in item["lom"]:
-            spaces["ccm:hpi_lom_relation"] = item["lom"]["relation"]
-            # Since Edu-Sharing has no further information about the schema of this attribute it is better to treat it
-            # as a list of strings and not as a JSON.
-            for i, element in enumerate(spaces["ccm:hpi_lom_relation"]):
-                # JSON expects double quotes.
-                element_str = str(element).replace("\'", "\"")
-                # JSON to Python dictionary
-                element_dict = json.loads(element_str)
-
-                # We expect and prefer single quotes in the result.
-                relation_value = json.dumps(element_dict, sort_keys=True).replace("\"", "\'")
-                # Remove redundant white spaces.
-                relation_value = ' '.join(relation_value.split())
-                spaces["ccm:hpi_lom_relation"][i] = relation_value
 
         return spaces
 

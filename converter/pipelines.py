@@ -319,20 +319,12 @@ class ProcessValuespacePipeline(BasicPipeline):
             mapped = []
             for entry in json[key]:
                 _id = {}
-                valuespace: list[dict] = self.valuespaces.data[key]
+                valuespace = self.valuespaces.data[key]
                 found = False
                 for v in valuespace:
                     labels = list(v["prefLabel"].values())
                     if "altLabel" in v:
-                        # the Skohub update on 2024-04-19 generates altLabels as a list[str] per language ("de", "en)
-                        # (for details, see: https://github.com/openeduhub/oeh-metadata-vocabs/pull/65)
-                        alt_labels: list[list[str]] = list(v["altLabel"].values())
-                        if alt_labels and isinstance(alt_labels, list):
-                            for alt_label in alt_labels:
-                                if alt_label and isinstance(alt_label, list):
-                                    labels.extend(alt_label)
-                                if alt_label and isinstance(alt_label, str):
-                                    labels.append(alt_label)
+                        labels = labels + list(v["altLabel"].values())
                     labels = list(map(lambda x: x.casefold(), labels))
                     if v["id"].endswith(entry) or entry.casefold() in labels:
                         _id = v["id"]
@@ -556,7 +548,6 @@ class ProcessThumbnailPipeline(BasicPipeline):
                     log.warning(f"Could not read thumbnail at {url}: {str(e)} (falling back to screenshot)")
                     raise e
                 if "thumbnail" in item:
-                    logging.warn("(falling back to " + ("defaultThumbnail" if "defaultThumbnail" in item else "screenshot") + ")")
                     del item["thumbnail"]
                     return await self.process_item(raw_item, spider)
                 else:
