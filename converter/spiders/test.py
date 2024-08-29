@@ -6,7 +6,6 @@ import scrapy
 import sys
 import vobject
 
-from converter.constants import Constants
 from converter.es_connector import EduSharingConstants
 from converter.items import LomAgeRangeItemLoader
 from converter.spiders.base_classes.lom_base import LomBase
