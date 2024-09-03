@@ -1,5 +1,4 @@
 
-import asyncio
 import sys
 import datetime as dt
 import time
@@ -13,8 +12,6 @@ from schulcloud.fwu.upload_fwu import Uploader as FWU_Uploader
 from schulcloud.permission_updater import PermissionUpdater
 from schulcloud.oeh_importer import OehImporter
 
-import nest_asyncio
-nest_asyncio.apply()
 
 needed_env_vars = [
     'CRAWLER',
@@ -129,9 +126,9 @@ class Job:
             if not self.schedule_rules:
                 raise ValueError('No schedule')
 
-    async def run_schedule(self):
+    def run_schedule(self):
         if not self.schedule_rules:
-            await self.run()
+            self.run()
             return
         while True:
             now = dt.datetime.now()
@@ -149,14 +146,14 @@ class Job:
                     time.sleep(min(time_remaining.total_seconds(), check_interval_seconds))
                     continue
 
-                await self.run()
+                self.run()
                 break
 
-    async def run(self):
-        await self.function()
+    def run(self):
+        self.function()
 
 
-async def main():
+def main():
     env = Environment(env_vars=needed_env_vars)
     schedule = env['SCHEDULE'].split(';')
     crawler = env['CRAWLER'].lower()
@@ -181,9 +178,9 @@ async def main():
         print(f'Unexpected execution target "{crawler}"', file=sys.stderr)
         return 1
 
-    await job.run_schedule()
+    job.run_schedule()
     return 0
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    sys.exit(main())
