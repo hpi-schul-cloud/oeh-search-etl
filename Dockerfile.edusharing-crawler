@@ -1,13 +1,14 @@
-FROM python:3.11.6-slim-bookworm
+FROM python:3.12.5-slim-bookworm
 
 RUN apt-get install ca-certificates
 
 WORKDIR /oeh-search-etl
 
-COPY requirements.txt .
-RUN python3.11 -m pip install --no-cache-dir -r requirements.txt
+COPY edu_sharing_openapi/ edu_sharing_openapi/
+COPY pyproject.toml poetry.lock ./
+RUN pip3 install --no-cache-dir poetry && poetry install
 
 COPY . .
 COPY .env.docker .env
 
-CMD [ "bash", "-c", "python3.11 run.py" ]
+CMD [ "bash", "-c", "poetry run python run.py" ]
