@@ -373,14 +373,11 @@ class EduSharing:
         #    - if a property has the value None, either delete the property or don't store it!
         spaces = {
             "ccm:replicationsource": spider.name,
-            "ccm:replicationsource_DISPLAYNAME": get_spider_friendly_name(spider.name),
             "ccm:replicationsourceid": item["sourceId"],
             "ccm:replicationsourcehash": item["hash"],
             "ccm:replicationsourceuuid": uuid,
             "cm:name": item["lom"]["general"]["title"],
             "cclom:title": item["lom"]["general"]["title"],
-            "ccm:hpi_lom_general_aggregationlevel": str(item["lom"]["general"]["aggregationLevel"]),
-            "ccm:hpi_searchable": str(item["searchable"]),
         }
         if "general" in item["lom"]:
             if "aggregationLevel" in item["lom"]["general"]:
