@@ -823,7 +823,6 @@ class ProcessThumbnailPipeline(BasicPipeline):
                     log.warning(f"Could not read thumbnail at {url}: {str(e)} (falling back to screenshot)")
                     raise e
                 if "thumbnail" in item:
-                    logging.warn("(falling back to " + ("defaultThumbnail" if "defaultThumbnail" in item else "screenshot") + ")")
                     del item["thumbnail"]
                     return await self.process_item(raw_item, spider)
                 else:
