@@ -10,17 +10,18 @@ The terms "spider" and "crawler" may be used interchangeable.
 Before doing anything in this repository, make sure you meet the following requirements:
 
 - docker and docker-compose
-- Python 3.11
+- Python 3.12 or newer is required
 - a python virtual environment
 - an .env file containing all the necessary credentials and settings
 - splash service for crawlers
 
 Debian-based systems:
 ```bash
-sudo apt install python3.11 python3-dev python3-pip python3-venv libpq-dev
+sudo apt install python3-dev python3-pip python3-venv libpq-dev -y
 python3 -m venv .venv
 source .venv/bin/activate
-pip3 install -r requirements.txt
+pip3 install poetry
+poetry install
 cp .env.example .env
 # adjust .env according to your use case
 ```
@@ -29,7 +30,8 @@ For windows, go to python.org to download and install the proper python version.
 ```commandline
 python3 -m venv .venv
 .venv\Scripts\activate.bat
-pip3 install -r requirements.txt
+pip3 install poetry
+poetry install
 copy .env.example .env
 REM adjust .env according to your use case
 ```
