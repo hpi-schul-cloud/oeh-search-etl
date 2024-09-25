@@ -224,20 +224,16 @@ class EduSharing:
         else:
             return False
 
-    async def set_node_preview(self, uuid, item) -> bool:
+    def set_node_preview(self, uuid, item) -> bool:
         if "thumbnail" in item:
             key = "large" if "large" in item["thumbnail"] else "small" if "small" in item["thumbnail"] else None
             if key:
                 files = {"image": base64.b64decode(item["thumbnail"][key])}
-                response = await self._client_async.post(
-                    get_project_settings().get("EDU_SHARING_BASE_URL")
-                    + "rest/node/v1/nodes/-home-/"
-                    + uuid
-                    + "/preview?mimetype="
-                    + item["thumbnail"]["mimetype"],
-                    headers=self.get_headers(None),
-                    files=files,
-                    timeout=None,
+                response = requests.post(
+                    url=f"{get_project_settings().get('EDU_SHARING_BASE_URL')}"
+                        f"rest/node/v1/nodes/-home-/{uuid}"
+                        f"/content?mimetype={item['thumbnail']['mimetype']}",
+                    data=files
                 )
                 return response.status_code == 200
         else:
@@ -759,7 +755,7 @@ class EduSharing:
             # temporary burst of items that need to be inserted
             node = self.sync_node(spider, "ccm:io", self.transform_item(uuid, spider, item))
             self.set_node_permissions(node["ref"]["id"], item)
-            await self.set_node_preview(node["ref"]["id"], item)
+            self.set_node_preview(node["ref"]["id"], item)
             if not await self.set_node_binary_data(node["ref"]["id"], item):
                 await self.set_node_text(node["ref"]["id"], item)
 
