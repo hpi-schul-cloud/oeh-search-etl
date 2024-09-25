@@ -229,7 +229,7 @@ class Uploader:
         for es_child in es_children:
             es_child_node = self.api.search_custom('ccm:replicationsourceuuid', es_child)
             if len(es_child_node) > 1:
-                raise FoundTooManyException
+                raise FoundTooManyException(es_child)
             es_child_node = es_child_node[0]
             delete_child = True
             for child in collection.children:
