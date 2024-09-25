@@ -41,7 +41,7 @@ class MerlinSpider(CrawlSpider, LomBase):
         print("Parsing URL: " + response.url)
 
         # Call Splash only once per page (that contains multiple XML elements).
-        data = self.getUrlData(response.url)
+        data = await LomBase.getUrlData(response.url)
         response.meta["rendered_data"] = data
 
         # We would use .fromstring(response.text) if the response did not include the XML declaration:
