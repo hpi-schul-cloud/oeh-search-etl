@@ -190,7 +190,10 @@ class Uploader:
             filename = os.path.basename(child.filepath)
             name = os.path.splitext(filename)[0]
             rep_source_id = create_replicationsourceid(name)
-            node_exists = self.api.find_node_by_replication_source_id(rep_source_id, skip_exception=True)
+            try:
+                node_exists = self.api.find_node_by_replication_source_id(rep_source_id, skip_exception=True)
+            except FoundTooManyException:
+                return "too_many"
             if not node_exists:
                 if uploaded_nodes == 0:
                     return "missing"
