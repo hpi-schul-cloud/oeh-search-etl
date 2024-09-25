@@ -2,7 +2,7 @@
 import requests
 from schulcloud import util
 
-needed_envs = ['SODIX_USER', 'SODIX_PASSWORD']
+needed_envs = ['SODIX_SPIDER_USERNAME', 'SODIX_SPIDER_PASSWORD']
 
 
 class SodixApi:
