@@ -11,8 +11,8 @@ class SodixApi:
 
     def __init__(self):
         env = util.Environment(env_vars=needed_envs)
-        self.user = env['SODIX_USER']
-        self.password = env['SODIX_PASSWORD']
+        self.user = env['SODIX_SPIDER_USERNAME']
+        self.password = env['SODIX_SPIDER_PASSWORD']
         self.access_token = ''
         self.login()
 
