@@ -227,18 +227,16 @@ class Uploader:
     def delete_too_many_children(self, collection_node: Node, collection: Collection):
         es_children = self.get_es_collection_children(collection_node)
         for es_child in es_children:
-            es_child_node = self.api.search_custom('ccm:replicationsourceuuid', es_child)
-            if len(es_child_node) > 1:
-                raise FoundTooManyException(es_child)
-            es_child_node = es_child_node[0]
-            delete_child = True
-            for child in collection.children:
-                if es_child_node.name == child.filepath:
-                    delete_child = False
-                    break
-            if delete_child:
-                print(f'Update Collection {collection.name}. Delete children: {es_child_node.name}')
-                self.api.delete_node(es_child_node.id)
+            es_child_nodes = self.api.search_custom('ccm:replicationsourceuuid', es_child)
+            for es_child_node in es_child_nodes:
+                delete_child = True
+                for child in collection.children:
+                    if es_child_node.name == child.filepath:
+                        delete_child = False
+                        break
+                if delete_child:
+                    print(f'Update Collection {collection.name}. Delete children: {es_child_node.name}')
+                    self.api.delete_node(es_child_node.id)
 
     def setup_destination_folder(self, folder_name: str):
         """
