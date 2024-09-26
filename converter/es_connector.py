@@ -431,7 +431,7 @@ class EduSharing:
                         f"seconds to milliseconds. ('cclom:duration' expects ms)"
                     )
                     pass
-                spaces["cclom:duration"] = duration
+                spaces["cclom:duration"] = str(duration)
             if "format" in item["lom"]["technical"]:
                 spaces["cclom:format"] = item["lom"]["technical"]["format"]
             if "location" in item["lom"]["technical"]:
