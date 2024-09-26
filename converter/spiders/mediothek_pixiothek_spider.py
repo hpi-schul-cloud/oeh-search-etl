@@ -63,7 +63,7 @@ class MediothekPixiothekSpider(CrawlSpider, LomBase):
         # date_object = datetime.strptime(hash, "%Y-%m-%d %H:%M:%S.%f").date()
         return element_id + element_timestamp
 
-    def mapResponse(self, response):
+    async def mapResponse(self, response):
         r = ResponseItemLoader(response=response)
         r.add_value("status", response.status)
         r.add_value("headers", response.headers)
