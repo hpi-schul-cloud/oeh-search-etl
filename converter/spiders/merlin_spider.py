@@ -4,6 +4,7 @@ import xmltodict as xmltodict
 from lxml import etree
 from scrapy.spiders import CrawlSpider
 from converter.items import *
+from converter.web_tools import WebEngine
 from .base_classes import LomBase
 import scrapy
 
@@ -41,7 +42,7 @@ class MerlinSpider(CrawlSpider, LomBase):
         print("Parsing URL: " + response.url)
 
         # Call Splash only once per page (that contains multiple XML elements).
-        data = await self.getUrlData(response.url)
+        data = await LomBase.getUrlData(self, response.url)
         response.meta["rendered_data"] = data
 
         # We would use .fromstring(response.text) if the response did not include the XML declaration:
@@ -75,7 +76,7 @@ class MerlinSpider(CrawlSpider, LomBase):
                 copyResponse._set_body(element_xml_str)
 
                 if self.hasChanged(copyResponse):
-                    yield self.handleEntry(copyResponse)
+                    yield await self.handleEntry(copyResponse)
 
                 # LomBase.parse() has to be called for every individual instance that needs to be saved to the database.
                 await LomBase.parse(self, copyResponse)
@@ -105,7 +106,7 @@ class MerlinSpider(CrawlSpider, LomBase):
         """ Since we have no 'last_modified' date from the elements we cannot do something better.
             Therefore, the current implementation takes into account (1) the code version, (2) the item's ID, and (3)
             the date (day, month, year). """
-        return (
+        return str(
             hash(self.version)
             + hash(self.getId(response))
             + self._date_to_integer(datetime.date(datetime.now()))
@@ -116,7 +117,7 @@ class MerlinSpider(CrawlSpider, LomBase):
             Using prime numbers for less collisions. """
         return 9973 * dt_time.year + 97 * dt_time.month + dt_time.day
 
-    def mapResponse(self, response):
+    async def mapResponse(self, response):
         r = ResponseItemLoader(response=response)
         r.add_value("status", response.status)
         r.add_value("headers", response.headers)
