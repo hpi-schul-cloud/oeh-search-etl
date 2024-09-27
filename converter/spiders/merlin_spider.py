@@ -1,12 +1,13 @@
 from datetime import datetime
 
+import scrapy
 import xmltodict as xmltodict
 from lxml import etree
 from scrapy.spiders import CrawlSpider
+
 from converter.items import *
 from converter.web_tools import WebEngine
 from .base_classes import LomBase
-import scrapy
 
 
 class MerlinSpider(CrawlSpider, LomBase):
@@ -21,6 +22,9 @@ class MerlinSpider(CrawlSpider, LomBase):
     url = "https://merlin.nibis.de/index.php"  # the url which will be linked as the primary link to your source (should be the main url of your site)
     friendlyName = "Merlin"  # name as shown in the search ui
     version = "0.1"  # the version of your crawler, used to identify if a reimport is necessary
+    custom_settings = {
+        "WEB_TOOLS": WebEngine.Playwright,
+    }
     apiUrl = "https://merlin.nibis.de/index.php?action=resultXml&start=%start&anzahl=%anzahl&query[stichwort]=*"  # * regular expression, to represent all possible values.
 
     limit = 100
