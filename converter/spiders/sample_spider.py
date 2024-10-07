@@ -15,8 +15,8 @@ class SampleSpider(CrawlSpider, LomBase):
     def __init__(self, **kwargs):
         LomBase.__init__(self, **kwargs)
 
-    def parse(self, response):
-        return LomBase.parse(self, response)
+    async def parse(self, response):
+        return await LomBase.parse(self, response)
 
     # return a (stable) id of the source
     def getId(self, response):
@@ -45,7 +45,6 @@ class SampleSpider(CrawlSpider, LomBase):
     def getLOMTechnical(self, response):
         technical = LomBase.getLOMTechnical(self, response)
         technical.add_value("location", response.url)
-        technical.add_value("format", "text/html")
         technical.add_value("size", len(response.body))
         return technical
 

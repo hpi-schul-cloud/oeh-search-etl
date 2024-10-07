@@ -1,7 +1,7 @@
 # Open Edu Hub Search ETL
 
 This repository is forked from openeduhub. Only a few spiders are directly in use
-with oeh being the main one. Others are mediothek_pixiothek, merlin, sodix.
+with oeh_spider being the main one. Others are mediothek_pixiothek, merlin, sodix.
 Notable differences to the original repository are schulcloud/ and run.py.
 
 The terms "spider" and "crawler" may be used interchangeable.
@@ -10,26 +10,28 @@ The terms "spider" and "crawler" may be used interchangeable.
 Before doing anything in this repository, make sure you meet the following requirements:
 
 - docker and docker-compose
-- Python 3.9
+- Python 3.12 or newer is required
 - a python virtual environment
 - an .env file containing all the necessary credentials and settings
 - splash service for crawlers
 
 Debian-based systems:
 ```bash
-sudo apt install python3.9 python3-dev python3-pip python3-venv libpq-dev
-python3.9 -m venv .venv
+sudo apt install python3-dev python3-pip python3-venv libpq-dev -y
+python3 -m venv .venv
 source .venv/bin/activate
-pip3 install -r requirements.txt
+pip3 install poetry
+poetry install
 cp .env.example .env
 # adjust .env according to your use case
 ```
 
 For windows, go to python.org to download and install the proper python version. After that:
 ```commandline
-python3.9 -m venv .venv
+python3 -m venv .venv
 .venv\Scripts\activate.bat
-pip3 install -r requirements.txt
+pip3 install poetry
+poetry install
 copy .env.example .env
 REM adjust .env according to your use case
 ```

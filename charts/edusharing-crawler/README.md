@@ -8,7 +8,7 @@
 ## List of available Crawlers/Scripts
 * mediothek_pixiothek_spider
 * merlin_spider
-* oeh_importer
+* oeh_spider
 * permission_updater
 * sodix_spider
 
@@ -35,7 +35,7 @@ The following environment variables are read:
 | EDU_SHARING_PASSWORD | ALL | Edusharing Password to authenticate  | `my_password` |
 | DRY_RUN | ALL (optinal) | Define whether not to upload to Edu-Sharing instance (default is `False`)  | `False` |
 | LOG_LEVEL | ALL (optional) | Set the Log Level (default is `INFO`)  | `INFO` |
-| SPLASH_URL | mediothek_pixiothek_spider, merlin_spider, oeh_importer, sodix_spider | Provide Url for Crawler to connect to | `http://splash.my-namespace.svc.cluster.local:8050` |
+| SPLASH_URL | mediothek_pixiothek_spider, merlin_spider, oeh_spider, sodix_spider | Provide Url for Crawler to connect to | `http://splash.my-namespace.svc.cluster.local:8050` |
 | SODIX_USER | sodix_spider | Sodix User to authenticate  | `my_sodix_user` |
 | SODIX_PASSWORD | sodix_spider | Sodix Password to authenticate  | `my_sodix_password` |
 | S3_ACCESS_KEY | h5p_upload, fwu_upload | Access Key with access to the Bucket  | `my_s3_access_key` |

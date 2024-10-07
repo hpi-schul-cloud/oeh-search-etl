@@ -6,7 +6,6 @@ from typing import List
 
 import converter.items as items
 from .lom_base import LomBase
-from overrides import overrides
 from scrapy.http import Request, Response
 from scrapy.http.response.text import TextResponse
 
@@ -65,7 +64,7 @@ class LernprogrammeSpiderBase(metaclass=ABCMeta):
             else None
         )
 
-    def parse(self, response):
+    async def parse(self, response):
         reader = csv.DictReader(
             StringIO(response.text),  # DictReader expects a file handle
             ["title", "description", "keywords", "thumbnail", "url", "width", "height"],
@@ -76,7 +75,7 @@ class LernprogrammeSpiderBase(metaclass=ABCMeta):
             row = self.map_row(row)
             response_copy = response.replace(url=row["url"])
             response_copy.meta["row"] = row
-            yield self.loader.parse(response_copy)
+            yield await self.loader.parse(response_copy)
             if self.exercise_loader is not None:
                 yield self.request_exercise(row)
 
@@ -118,24 +117,19 @@ class LernprogrammeLomLoader(LomBase):
         self.static_values = static_values
         super().__init__(**kwargs)
 
-    @overrides  # LomBase
     def getId(self, response: Response) -> str:
         return response.meta["row"]["url"]
 
-    @overrides  # LomBase
     def getHash(self, response: Response) -> str:
         hash_string = self.version + str(response.meta["row"].items())
         return hashlib.sha1(hash_string.encode("utf8")).hexdigest()
 
-    @overrides  # LomBase
     def getBase(self, response: Response) -> items.BaseItemLoader:
         base = LomBase.getBase(self, response)
-        base.replace_value("type", self.static_values["type"])
         if response.meta["row"]["thumbnail"] is not None:
             base.add_value("thumbnail", response.meta["row"]["thumbnail"])
         return base
 
-    @overrides  # LomBase
     def getLOMGeneral(self, response: Response) -> items.LomGeneralItemloader:
         general = LomBase.getLOMGeneral(self, response)
         general.add_value("title", response.meta["row"]["title"])
@@ -146,14 +140,12 @@ class LernprogrammeLomLoader(LomBase):
         general.add_value("language", self.static_values["language"])
         return general
 
-    @overrides  # LomBase
     def getLOMTechnical(self, response: Response) -> items.LomTechnicalItemLoader:
         technical = LomBase.getLOMTechnical(self, response)
         technical.add_value("format", self.static_values["format"])
         technical.add_value("location", response.meta["row"]["url"])
         return technical
 
-    @overrides  # LomBase
     def getLOMLifecycle(self, response: Response) -> items.LomLifecycleItemloader:
         lifecycle = LomBase.getLOMLifecycle(self, response)
         lifecycle.add_value("role", "author")
@@ -162,16 +154,15 @@ class LernprogrammeLomLoader(LomBase):
         lifecycle.add_value("url", self.url)
         return lifecycle
 
-    @overrides  # LomBase
     def getLicense(self, response: Response) -> items.LicenseItemLoader:
         license = LomBase.getLicense(self, response)
         license.add_value("url", self.static_values["licence_url"])
         return license
 
-    @overrides  # LomBase
     def getValuespaces(self, response: Response) -> items.ValuespaceItemLoader:
         valuespaces = LomBase.getValuespaces(self, response)
         skos = self.static_values["skos"]
+        valuespaces.replace_value("new_lrt", skos["new_lrt"])
         valuespaces.add_value(
             "learningResourceType",
             skos["learningResourceType"],

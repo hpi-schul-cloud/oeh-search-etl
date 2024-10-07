@@ -5,7 +5,7 @@ import w3lib.html
 
 from converter.constants import Constants
 from converter.items import LomBaseItemloader, LomGeneralItemloader, LomTechnicalItemLoader, LomLifecycleItemloader, \
-    LomEducationalItemLoader, ValuespaceItemLoader, LicenseItemLoader
+    LomEducationalItemLoader, ValuespaceItemLoader, LicenseItemLoader, ResponseItemLoader
 from converter.spiders.base_classes import LomBase
 
 
@@ -184,7 +184,7 @@ class GinkgoMapsSpider(scrapy.Spider, LomBase):
         # print("fourth level Method: current url = ", str(response.url), " amount of URLs in total: ",
         #       len(self.navigation_urls))
 
-    def parse(self, response: scrapy.http.Response, **kwargs):
+    async def parse(self, response: scrapy.http.Response, **kwargs):
         """
 
         Scrapy Contracts:
@@ -238,7 +238,6 @@ class GinkgoMapsSpider(scrapy.Spider, LomBase):
         last_modified = response.xpath('/html/head/meta[6]/@content').get()
         hash_temp = last_modified + self.version
         base.add_value('hash', hash_temp)
-        base.add_value('type', Constants.TYPE_MATERIAL)
         if first_thumbnail is not None:
             base.add_value('thumbnail', first_thumbnail)
         base.add_value('lastModified', last_modified)
@@ -284,11 +283,11 @@ class GinkgoMapsSpider(scrapy.Spider, LomBase):
         #                                     "Sekundarstufe II",
         #                                     "Berufliche Bildung",
         #                                     "Erwachsenenbildung"])
+        vs.add_value('new_lrt', [Constants.NEW_LRT_MATERIAL, 'b6ceade0-58d3-4179-af71-d53ebc6e49d4'])  # karte
         vs.add_value('intendedEndUserRole', ["learner",
                                              "teacher",
                                              "parent"])
         vs.add_value('discipline', 'Geografie')  # Geografie
-        vs.add_value('learningResourceType', 'map')  # Karte
         vs.add_value('conditionsOfAccess', 'no login')
 
         lic = LicenseItemLoader()
@@ -307,6 +306,7 @@ class GinkgoMapsSpider(scrapy.Spider, LomBase):
         permissions = super().getPermissions(response)
         base.add_value('permissions', permissions.load_item())
 
-        base.add_value('response', super().mapResponse(response).load_item())
+        response_itemloader: ResponseItemLoader = await super().mapResponse(response)
+        base.add_value('response', response_itemloader.load_item())
 
         yield base.load_item()
