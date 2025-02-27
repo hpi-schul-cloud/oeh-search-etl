@@ -171,10 +171,12 @@ class Uploader:
         Return permitted groups from Excelsheet, which matching with the list.
         @param permissions: List of known permissions
         """
+        print("Permissions: ", permissions)
         if 'ALLE' in permissions:
-            return list(GROUPS_EXCEL_TO_ES.values())
+            return List(GROUPS_EXCEL_TO_ES.values())
         else:
-            return [GROUPS_EXCEL_TO_ES[group] for group in permissions]
+            groups = [group.strip() for group in permissions.split(',')]
+            return [GROUPS_EXCEL_TO_ES[group] for group in groups]
 
     def collection_status(self, collection: Collection, collection_node: Node):
         """
