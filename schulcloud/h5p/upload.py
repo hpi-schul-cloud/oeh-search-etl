@@ -172,7 +172,7 @@ class Uploader:
         @param permissions: List of known permissions
         """
         if 'ALLE' in permissions:
-            return List(GROUPS_EXCEL_TO_ES.values())
+            return list(GROUPS_EXCEL_TO_ES.values())
         else:
             groups = [group.strip() for group in permissions.split(',')]
             return [GROUPS_EXCEL_TO_ES[group] for group in groups]
