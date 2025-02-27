@@ -171,7 +171,6 @@ class Uploader:
         Return permitted groups from Excelsheet, which matching with the list.
         @param permissions: List of known permissions
         """
-        print("Permissions: ", permissions)
         if 'ALLE' in permissions:
             return List(GROUPS_EXCEL_TO_ES.values())
         else:
