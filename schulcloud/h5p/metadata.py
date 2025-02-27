@@ -86,8 +86,7 @@ class MetadataFile:
             # Check permissions of collection
             permissions = []
             for row in range(1, sheet.max_row + 1):
-                permissions_raw = sheet.cell(row=row, column=self.COLUMN.PERMISSION).value
-                permissions += re.findall(r'\w+', permissions_raw)
+                permissions += re.findall(r'\w+', sheet.cell(row=row, column=self.COLUMN.PERMISSION).value)
             for permission in permissions:
                 if permission not in ('NDS', 'BRB', 'THR', 'ALLE'):
                     raise ParsingError(f'Spelling mistake or unknown permission: {permission} at {self._file.name}')
