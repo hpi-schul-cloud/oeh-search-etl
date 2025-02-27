@@ -174,8 +174,7 @@ class Uploader:
         if 'ALLE' in permissions:
             return list(GROUPS_EXCEL_TO_ES.values())
         else:
-            permission_list = [permission.strip() for permission in permissions[0].split(',')]
-            return [GROUPS_EXCEL_TO_ES[group] for group in permission_list]
+            return [GROUPS_EXCEL_TO_ES[group] for group in permissions]
 
     def collection_status(self, collection: Collection, collection_node: Node):
         """
