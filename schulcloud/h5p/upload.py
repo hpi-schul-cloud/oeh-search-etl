@@ -238,6 +238,13 @@ class Uploader:
                     print(f'Update Collection {collection.name}. Delete children: {es_child_node.name}')
                     self.api.delete_node(es_child_node.id)
 
+    def update_childrens_permissions(self, collection_node: Node, collection_permissions: List[str], inheritance: bool):
+        es_children = self.get_es_collection_children(collection_node)
+        for es_child in es_children:
+            es_child_nodes = self.api.search_custom('ccm:replicationsourceuuid', es_child)
+            for es_child_node in es_child_nodes:
+                self.api.set_permissions(es_child_node.id, collection_permissions, inheritance)
+
     def setup_destination_folder(self, folder_name: str):
         """
         Create the destination folder for the upload inside the sync_obj folder, if the folder doesn't exist.
@@ -363,6 +370,13 @@ class Uploader:
                             if collection_node.created_at > last_modified:
                                 print(
                                     f'Collection {collection.name} already exists and is owned by {collection_owner}.')
+                                # we only have to check permissions, if the files are not uploaded
+                                node_permissions, inherited = self.api.get_permissions_groups(collection_node.id)
+                                permitted_groups = self.get_permitted_groups(collection.permissions)
+                                if sorted(node_permissions) != sorted(permitted_groups):
+                                    print(f'Update Collection {collection.name}. Change permissions to: {permitted_groups}')
+                                    self.update_childrens_permissions(collection_node, permitted_groups, False)
+                                    self.api.set_permissions(collection_node.id, permitted_groups, False)
                                 continue
                 if collection_status == "broken":
                     collection_owner = self.get_collection_owned(collection_node.id)
