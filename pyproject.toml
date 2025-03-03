@@ -1,13 +1,16 @@
 [project]
+name = "oeh-search-etl"
 description = "Crawls educational sites for use in wirlernenonline.de"
 authors = [
-    "Torsten Simon <simon@edu-sharing.net>"
+    { name = "Torsten Simon", email = "simon@edu-sharing.net" }
 ]
 maintainers = [
-    "Andreas Schnäpp <981166+Criamos@users.noreply.github.com>"
+    { name = "Andreas Schnäpp", email = "schnaepp@edu-sharing.net" }
 ]
-readme = "README.md"
-python = "^3.12"
+readme = "Readme.md"
+requires-python = "^3.13"
+version = "2025.01.07"
+dynamic = ["dependencies"]
 homepage = "https://github.com/openeduhub/oeh-search-etl"
 repository = "https://github.com/openeduhub/oeh-search-etl"
 documentation = "https://github.com/openeduhub/oeh-search-etl"
@@ -17,14 +20,14 @@ keywords = ["metadata", "oer", "crawl", "wirlernenonline"]
 classifiers = [
     "Framework :: Scrapy",
     "Development Status :: 4 - Beta",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Education :: Testing",
     "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
 ]
 
 [tool.black]
 line-length = 120
-target-version = ['py312']
+target-version = ['py313']
 include = '\.pyi?$'
 exclude = '''
 
@@ -47,18 +50,11 @@ exclude = '''
 '''
 
 [tool.poetry]
-name = "oeh-search-etl"
-version = "2024.09.03"
-description = "Crawls educational sites for use in WirLernenOnline.de"
-authors = ["Torsten Simon <simon@edu-sharing.net>"]
-maintainers = [
-    "Andreas Schnäpp <981166+Criamos@users.noreply.github.com>"
-]
-readme = "Readme.md"
 packages = [{include = "converter"}]
+requires-poetry = ">=2.0"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.13"
 wheel = "0.44.0"
 black = "24.8.0"
 certifi="2024.8.30"
