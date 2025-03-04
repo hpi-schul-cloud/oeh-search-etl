@@ -10,6 +10,8 @@ services:
     restart: always
     ports:
       - "127.0.0.1:8050:8050"
+    networks:
+      - scrapy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8050/_ping"]
       interval: 30s
@@ -17,9 +19,34 @@ services:
       retries: 3
       start_period: 40s
   headless_chrome:
-    image: ghcr.io/browserless/chromium:v2.14.0
+    image: ghcr.io/browserless/chrome:v2.24.1
     restart: always
     environment:
       - TIMEOUT=120000
     ports:
       - "127.0.0.1:3000:3000"
+    networks:
+      - scrapy
+  scrapy:
+    # extra_hosts is only required if your need to access an edu-sharing instance on the host that runs docker
+    # host.docker.internal points to the ip address of the host docker network interface 
+    extra_hosts:
+      host.docker.internal: host-gateway
+    image: openeduhub/oeh-search-etl:develop
+    build:
+      context: .
+      network: host
+    networks:
+      - scrapy
+    environment:
+      - "PYPPETEER_WS_ENDPOINT=ws://headless_chrome:3000"
+      - "PLAYWRIGHT_WS_ENDPOINT=ws://headless_chrome:3000"
+      - "SPLASH_URL=http://splash:8050"
+      - "CRAWLER=${CRAWLER}"
+      # optional keyword args, e.g. cleanrun=true
+      - "ARGS=${ARGS}"
+      - "DRY_RUN=False"
+      - "LOG_LEVEL=${LOG_LEVEL:-INFO}"
+      - "EDU_SHARING_BASE_URL=${EDU_SHARING_BASE_URL}"
+      - "EDU_SHARING_USERNAME=${EDU_SHARING_USERNAME}"
+      - "EDU_SHARING_PASSWORD=${EDU_SHARING_PASSWORD}"
