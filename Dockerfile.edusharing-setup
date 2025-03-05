@@ -14,4 +14,4 @@ RUN pip3 install --no-cache-dir poetry && poetry install
 COPY . .
 COPY ./schulcloud/edusharing_setup.py ./edusharing_setup.py
 
-CMD [ "bash", "-c", "poetry run python edusharing_setup.py" ]
+CMD [ "bash", "-c", "poetry run python -u edusharing_setup.py" ]
