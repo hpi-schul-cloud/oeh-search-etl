@@ -12,4 +12,4 @@ RUN pip3 install --no-cache-dir poetry && poetry install
 COPY . .
 COPY .env.docker .env
 
-CMD [ "bash", "-c", "poetry run python run.py" ]
+CMD [ "bash", "-c", "poetry run python -u run.py" ]
